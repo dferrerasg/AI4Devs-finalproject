@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from '@/config/env';
+import authRouter from '@/interfaces/http/routes/auth.routes';
 
 const app = express();
 
@@ -12,8 +13,12 @@ app.use(cors({ origin: env.CORS_ORIGIN }));
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Routes
+app.use('/auth', authRouter);
+
 // Health Check
 app.get('/health', (req, res) => {
+
   res.json({
     status: 'ok',
     uptime: process.uptime(),

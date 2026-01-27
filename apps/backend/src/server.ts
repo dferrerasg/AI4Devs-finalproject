@@ -2,7 +2,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import app from './app';
 import { env } from '@/config/env';
-import prisma from '@/infrastructure/database/prisma';
+import { prisma } from '@/infrastructure/database/prisma';
 
 const server = http.createServer(app);
 
