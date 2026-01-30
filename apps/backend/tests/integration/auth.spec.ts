@@ -3,6 +3,8 @@ import app from '../../src/app';
 import { createRegisterUserDto, createLoginUserDto } from '../factories/user.factory';
 import { prisma } from '@/infrastructure/database/prisma';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { env } from '@/config/env';
 
 // Mocking Prisma
 jest.mock('@/infrastructure/database/prisma', () => ({
@@ -109,6 +111,42 @@ describe('Auth Integration', () => {
       const response = await request(app).post(loginUrl).send(loginData);
 
       // Assert
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe('GET /auth/me', () => {
+    it('should return 200 and user info given valid token', async () => {
+      // Arrange
+      const userId = 'user-uuid-123';
+      const token = jwt.sign({ userId, email: 'test@example.com', role: 'CLIENT' }, env.JWT_SECRET, { expiresIn: '1h' });
+      
+      const mockUser = {
+        id: userId,
+        email: 'test@example.com',
+        fullName: 'Test User',
+        role: 'CLIENT',
+        subscriptionTier: 'FREE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      // Mock findById (via findUnique)
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+
+      // Act
+      const response = await request(app)
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${token}`);
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('email', 'test@example.com');
+      expect(response.body).not.toHaveProperty('passwordHash');
+    });
+
+    it('should return 401 if no token provided', async () => {
+      const response = await request(app).get('/auth/me');
       expect(response.status).toBe(401);
     });
   });

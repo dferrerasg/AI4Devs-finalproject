@@ -1,6 +1,6 @@
 # Plan de Implementación: BACK-002 (Gestión de Proyectos)
 
-**Estado:** Pendiente
+**Estado:** Completado
 
 ## Objetivo
 Implementar la lógica de negocio, persistencia y exposición HTTP para la gestión de proyectos (CRUD) y el control de límites de la capa gratuita ("Slots"), siguiendo Clean Architecture y TDD.
