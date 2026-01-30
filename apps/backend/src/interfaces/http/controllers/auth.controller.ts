@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { RegisterUserUseCase } from '@/application/use-cases/register-user.use-case';
 import { LoginUserUseCase } from '@/application/use-cases/login-user.use-case';
+import { GetCurrentUserUseCase } from '@/application/use-cases/get-current-user.use-case';
 import { RegisterUserSchema, LoginUserSchema } from '@/domain/dtos/auth.dto';
 import { UserAlreadyExistsError, InvalidCredentialsError } from '@/domain/errors/custom.errors';
 
@@ -8,6 +9,7 @@ export class AuthController {
   constructor(
     private registerUserUseCase: RegisterUserUseCase,
     private loginUserUseCase: LoginUserUseCase,
+    private getCurrentUserUseCase?: GetCurrentUserUseCase, // Optional to not break existing tests if any instantiation without it happens, but better explicit. Let's make it optional for now or update instantiation.
   ) {}
 
   async register(req: Request, res: Response) {
@@ -52,6 +54,28 @@ export class AuthController {
       }
       console.error(error);
       return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async me(req: Request, res: Response) {
+    try {
+      // @ts-ignore
+      const userId = req.user.userId;
+      
+      if (!this.getCurrentUserUseCase) {
+         throw new Error('GetCurrentUserUseCase not initialized');
+      }
+
+      const user = await this.getCurrentUserUseCase.execute(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.status(200).json(user);
+    } catch (error) {
+       console.error(error);
+       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 }

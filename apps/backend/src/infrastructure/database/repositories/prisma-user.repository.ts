@@ -22,6 +22,25 @@ export class PrismaUserRepository implements IUserRepository {
     );
   }
 
+  async findById(id: string): Promise<User | null> {
+    const userModel = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!userModel) return null;
+
+    return new User(
+      userModel.id,
+      userModel.email,
+      userModel.passwordHash,
+      userModel.role as UserRole,
+      userModel.subscriptionTier as SubscriptionTier,
+      userModel.fullName,
+      userModel.createdAt,
+      userModel.updatedAt,
+    );
+  }
+
   async save(user: User): Promise<User> {
     // Determine if update or create based on ID existence? 
     // In Clean Arch, usually 'save' handles both, but here let's assume create for now 

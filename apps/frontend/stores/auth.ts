@@ -20,6 +20,27 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null;
   }
 
+  async function fetchCurrentUser() {
+    if (!token.value) return;
+    
+    try {
+      const config = useRuntimeConfig();
+      const data = await $fetch<User>(`${config.public.apiBase}/auth/me`, {
+        headers: {
+            Authorization: `Bearer ${token.value}`
+        }
+      });
+      
+      setUser(data);
+    } catch (e: any) {
+      console.error('Failed to fetch user session', e);
+      // If 401, clear token
+      if (e.response?.status === 401 || e.statusCode === 401) {
+          clearAuth();
+      }
+    }
+  }
+
   return {
     user,
     token,
@@ -27,5 +48,6 @@ export const useAuthStore = defineStore('auth', () => {
     setUser,
     setToken,
     clearAuth,
+    fetchCurrentUser
   };
 });

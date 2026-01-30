@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import UiButton from './UiButton.vue'
+import UiButton from '~/components/common/UiButton.vue'
 
 describe('UiButton', () => {
   const loadingSpinnerSelector = 'svg.animate-spin'
