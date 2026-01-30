@@ -3,7 +3,7 @@
 ## 1. Stack Tecnológico
 - **Framework Principal:** Nuxt.js 3 (Vue 3)
 - **Lenguaje:** TypeScript
-- **Estilado:** Tailwind CSS (Recomendado para desarrollo rápido)
+- **Estilado:** Tailwind CSS (Theme con variables corporativas, Responsive)
 - **Gestión de Estado:** Pinia
 - **Cliente HTTP:** $fetch / ohmyfetch (Nativo de Nuxt)
 - **Comunicación Real-time:** Socket.io-client
@@ -16,6 +16,8 @@ Proveer una interfaz de usuario reactiva, rápida y optimizada para SEO (en las 
 - **Composables (Hooks):** Toda lógica de negocio reutilizable (auth, gestión de planos, lógica de sockets) se extrae a la carpeta `composables/` para mantener los componentes limpios ("Skinny Components").
 - **Tipado Estricto:** Uso de interfaces compartidas para modelos de datos (Proyecto, Usuario, Pin).
 - **Middlewares:** Para protección de rutas (AuthGuard) y redirecciones.
+- **Identidad Corporativa:** Definición de estilos globales mediante variables CSS mapeadas en Tailwind (`primary`, `secondary`, etc).
+- **Responsividad:** Diseño adaptable obligatorio (Mobile, Tablet, Desktop) usando breakpoints de Tailwind.
 
 ## 4. Estructura de Directorios Propuesta
 

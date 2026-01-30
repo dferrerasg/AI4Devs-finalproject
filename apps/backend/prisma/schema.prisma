@@ -9,10 +9,24 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String           @id @default(uuid())
+  email            String           @unique
+  passwordHash     String           @map("password_hash")
+  fullName         String?          @map("full_name")
+  role             Role             @default(CLIENT)
+  subscriptionTier SubscriptionTier @default(FREE) @map("subscription_tier")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
 }
