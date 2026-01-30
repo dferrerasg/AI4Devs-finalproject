@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from '@/config/env';
 import authRouter from '@/interfaces/http/routes/auth.routes';
+import { projectRoutes } from '@/interfaces/http/routes/project.routes';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(morgan('dev'));
 
 // Routes
 app.use('/auth', authRouter);
+app.use('/api/projects', projectRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
