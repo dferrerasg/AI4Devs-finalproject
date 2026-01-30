@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
-import UiInput from './UiInput.vue'
+import UiInput from '~/components/common/UiInput.vue'
 
 const mockValue = ref('')
 const mockErrorMessage = ref('')
