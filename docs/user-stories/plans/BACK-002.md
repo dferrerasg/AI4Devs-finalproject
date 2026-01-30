@@ -17,7 +17,7 @@ apps/backend/src/
 │   ├── dtos/                # (CreateProjectDto, ProjectResponseDto)
 │   └── errors/              # (MaxProjectsLimitReachedError)
 ├── application/
-│   └── use-cases/           # (CreateProjectUseCase, GetUserProjectsUseCase, DeleteProjectUseCase)
+│   └── use-cases/           # (CreateProjectUseCase, GetUserProjectsUseCase, DeleteProjectUseCase, GetCurrentUserUseCase)
 ├── infrastructure/
 │   └── database/
 │       └── repositories/    # (PrismaProjectRepository)
@@ -34,6 +34,7 @@ Crear tests de integración para definir el contrato de la API y las reglas de n
 1.  **Archivo:** `apps/backend/tests/integration/projects.spec.ts`
 2.  **Casos de prueba:**
     *   `POST /api/projects` -> 201 Created (Usuario con slots disponibles).
+    *   `GET /auth/me` -> 200 OK (Usuario autenticado recupera su perfil).
     *   `POST /api/projects` -> 403 Forbidden (Usuario FREE con 3 proyectos activos).
     *   `GET /api/projects` -> 200 OK (Lista de proyectos del usuario autenticado).
     *   `DELETE /api/projects/:id` -> 204 No Content (Soft delete).

@@ -71,13 +71,15 @@
 - **Tipo:** Backend Feature
 - **Propósito:** CRUD de proyectos y control de límites de plan.
 - **Especificaciones Técnicas:**
-  - `POST /projects`: Crea proyecto. Check `COUNT(projects) < 3`.
-  - `GET /projects`: Lista proyectos del usuario.
-  - `DELETE /projects/:id`: Borra lógico o físico.
+  - `POST /api/projects`: Crea proyecto. Check `COUNT(projects) < 3`.
+  - `GET /api/projects`: Lista proyectos del usuario.
+  - `DELETE /api/projects/:id`: Borra lógico o físico.
+  - `GET /auth/me`: Retorna la información del usuario autenticado (persistencia).
   - Schema DB: `Project` (id, user_id, name, created_at, active).
 - **Criterios de Aceptación:**
   - No permite crear el 4º proyecto.
   - Eliminar proyecto actualiza el conteo.
+  - Info de usuario disponible tras refrescar página.
 - **Equipo Asignado:** Backend
 - **Esfuerzo:** 5 pts
 
@@ -88,10 +90,12 @@
   - Componente `ProjectCard`.
   - Modal `CreateProjectModal`.
   - Store `useProjectStore` para manejar la lista.
+  - Store `useAuthStore` updated: acción `fetchUser` al iniciar app.
   - Lógica visual para bloquear botón "Nuevo" si slots llenos.
 - **Criterios de Aceptación:**
   - Dashboard muestra lista correcta.
   - Creación actualiza la lista sin recargar (optimistic UI o fetch).
+  - El usuario mantiene su sesión activa y datos de perfil al refrescar la web.
 - **Equipo Asignado:** Frontend
 - **Esfuerzo:** 5 pts
 
