@@ -33,36 +33,43 @@ export const useProjectStore = defineStore('project', () => {
   async function fetchProjects() {
     loading.value = true;
     error.value = null;
-    const { data, error: apiError } = await useApi<Project[]>('/api/projects');
-    
-    if (apiError.value) {
-      error.value = apiError.value.message || 'Failed to fetch projects';
-    } else if (data.value) {
-      projects.value = data.value;
+    try {
+      const config = useRuntimeConfig();
+      const data = await $fetch<Project[]>(`${config.public.apiBase}/api/projects`, {
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        }
+      });
+      projects.value = data;
+    } catch (e: any) {
+      error.value = e.data?.message || e.message || 'Failed to fetch projects';
+    } finally {
+      loading.value = false;
     }
-    loading.value = false;
   }
 
   async function createProject(projectData: CreateProjectDto) {
     loading.value = true;
     error.value = null;
     
-    const { data, error: apiError } = await useApi<Project>('/api/projects', {
-      method: 'POST',
-      body: projectData,
-    });
-
-    if (apiError.value) {
-      error.value = apiError.value.message || 'Failed to create project';
+    try {
+      const config = useRuntimeConfig();
+      const data = await $fetch<Project>(`${config.public.apiBase}/api/projects`, {
+        method: 'POST',
+        body: projectData,
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        }
+      });
+      projects.value.push(data);
+      return data;
+    } catch (e: any) {
+      error.value = e.data?.message || e.message || 'Failed to create project';
       loading.value = false;
       throw new Error(error.value);
-    } else if (data.value) {
-      // Optimistic update or just push result
-      projects.value.push(data.value);
+    } finally {
+      loading.value = false;
     }
-    
-    loading.value = false;
-    return data.value;
   }
 
   return {

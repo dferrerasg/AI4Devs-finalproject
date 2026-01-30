@@ -1,6 +1,6 @@
 # Plan de Implementación: FRONT-002 (Dashboard y Gestión de Proyectos)
 
-**Estado:** Pendiente
+**Estado:** Completado
 
 ## Objetivo
 Implementar la interfaz de usuario para el dashboard principal, permitiendo visualizar la lista de proyectos y crear nuevos proyectos, respetando las limitaciones del plan de suscripción.
