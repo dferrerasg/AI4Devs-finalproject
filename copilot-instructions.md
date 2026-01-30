@@ -17,5 +17,6 @@ This project follows strict guidelines for development. Please refer to the spec
 *   **Testing:** 
     *   If working on **Backend**: Ask for the test case *first* or generate the test *first* (TDD).
     *   If working on **Frontend**: Implement the feature first, then offer to generate Vitest/Playwright tests.
+    *   **Maintainability**: Define CSS classes and DOM values as variables at the start of tests using behavior-related names (e.g., `const errorBorderClass = 'border-red-500'`).
 *   **Docs:** Update OpenAPI specs when modifying API endpoints.
 *   **Refactoring:** Always prefer extracting logic to Services (Backend) or Composables (Frontend). Do not bloat Controllers or Vue Components.
