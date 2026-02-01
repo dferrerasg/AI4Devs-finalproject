@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { ILayerRepository } from '@/domain/layers/layer.repository';
-import { Layer } from '@/domain/layers/layer.entity';
-import { LayerStatus, LayerType } from '@/domain/layers/layer-types.enum';
+import { Layer, LayerStatus, LayerType } from '@trace/core';
 
 export class PrismaLayerRepository implements ILayerRepository {
   constructor(private prisma: PrismaClient) {}

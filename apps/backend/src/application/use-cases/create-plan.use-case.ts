@@ -1,6 +1,6 @@
 import { IPlanRepository } from '@/domain/plans/plan.repository';
 import { CreatePlanDto } from '@/domain/dtos/create-plan.dto';
-import { Plan } from '@/domain/plans/plan.entity';
+import { Plan } from '@trace/core';
 
 export class CreatePlanUseCase {
   constructor(private planRepository: IPlanRepository) {}

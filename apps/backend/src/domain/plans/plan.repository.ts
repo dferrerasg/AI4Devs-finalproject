@@ -1,4 +1,4 @@
-import { Plan } from './plan.entity';
+import { Plan } from '@trace/core';
 
 export interface IPlanRepository {
   findLatestVersion(projectId: string, sheetName: string): Promise<Plan | null>;

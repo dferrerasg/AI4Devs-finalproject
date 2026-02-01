@@ -2,8 +2,7 @@ import { ILayerRepository } from '@/domain/layers/layer.repository';
 import { IFileStorage } from '@/domain/layers/file-storage.interface';
 import { IJobQueue } from '@/domain/layers/job-queue.interface';
 import { UploadLayerDto } from '@/domain/dtos/upload-layer.dto';
-import { Layer } from '@/domain/layers/layer.entity';
-import { LayerType } from '@/domain/layers/layer-types.enum';
+import { Layer, LayerType } from '@trace/core';
 
 export class UploadLayerUseCase {
   constructor(

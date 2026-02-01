@@ -1,4 +1,4 @@
-import { Layer } from './layer.entity';
+import { Layer } from '@trace/core';
 
 export interface ILayerRepository {
   save(layer: Layer): Promise<Layer>;

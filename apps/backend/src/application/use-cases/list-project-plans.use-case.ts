@@ -1,5 +1,5 @@
 import { IPlanRepository } from '@/domain/plans/plan.repository';
-import { Plan } from '@/domain/plans/plan.entity';
+import { Plan } from '@trace/core';
 
 export class ListProjectPlansUseCase {
   constructor(private planRepository: IPlanRepository) {}

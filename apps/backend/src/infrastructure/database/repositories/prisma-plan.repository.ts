@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { IPlanRepository } from '@/domain/plans/plan.repository';
-import { Plan } from '@/domain/plans/plan.entity';
-import { PlanStatus } from '@/domain/plans/plan-status.enum';
+import { Plan, PlanStatus } from '@trace/core';
 
 export class PrismaPlanRepository implements IPlanRepository {
   constructor(private prisma: PrismaClient) {}
