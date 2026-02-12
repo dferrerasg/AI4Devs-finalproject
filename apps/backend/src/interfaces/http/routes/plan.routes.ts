@@ -8,19 +8,22 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 import { ensureProjectPermission } from '../middlewares/project-permission.middleware';
 import { ProjectRole } from '@prisma/client';
 
+import { GetPlanUseCase } from '@/application/use-cases/get-plan.use-case';
+
 const router = Router({ mergeParams: true }); // Important to access :projectId from parent route
 
 // Dependecy Injection
 const planRepository = new PrismaPlanRepository(prisma);
 const createPlanUseCase = new CreatePlanUseCase(planRepository);
 const listProjectPlansUseCase = new ListProjectPlansUseCase(planRepository);
-const planController = new PlanController(createPlanUseCase, listProjectPlansUseCase);
+const getPlanUseCase = new GetPlanUseCase(planRepository);
+const planController = new PlanController(createPlanUseCase, listProjectPlansUseCase, getPlanUseCase);
 
 // Routes
 // POST /api/projects/:projectId/plans
 router.post(
   '/',
-  authMiddleware,
+  // authMiddleware is inherited from projectRoutes
   ensureProjectPermission([ProjectRole.OWNER, ProjectRole.EDITOR]),
   (req, res) => planController.create(req, res)
 );
@@ -28,9 +31,15 @@ router.post(
 // GET /api/projects/:projectId/plans
 router.get(
   '/',
-  authMiddleware,
   ensureProjectPermission([ProjectRole.OWNER, ProjectRole.EDITOR, ProjectRole.VIEWER]),
   (req, res) => planController.list(req, res)
+);
+
+// GET /api/projects/:projectId/plans/:planId
+router.get(
+    '/:planId',
+    ensureProjectPermission([ProjectRole.OWNER, ProjectRole.EDITOR, ProjectRole.VIEWER]),
+    (req, res) => planController.get(req, res)
 );
 
 export { router as planRoutes };

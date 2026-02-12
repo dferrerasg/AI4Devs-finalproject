@@ -34,9 +34,12 @@ const formatDate = (dateString: string) => {
     
     <div class="mt-auto flex items-center justify-between text-xs text-gray-500 pt-4 border-t">
       <span>Actualizado: {{ formatDate(project.updatedAt) }}</span>
-      <button class="text-indigo-600 hover:text-indigo-800 font-medium">
+      <NuxtLink 
+        :to="`/dashboard/project/${project.id}`"
+        class="text-indigo-600 hover:text-indigo-800 font-medium"
+      >
         Ver Proyecto &rarr;
-      </button>
+      </NuxtLink>
     </div>
   </div>
 </template>

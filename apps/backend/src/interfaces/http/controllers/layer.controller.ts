@@ -7,7 +7,7 @@ export class LayerController {
   async upload(req: Request, res: Response) {
     try {
       const { planId } = req.params;
-      const { layerName, layerType } = req.body;
+      const { layerName, layerType, pdfPageUserSelected } = req.body;
       const file = req.file;
 
       if (!file) {
@@ -26,7 +26,8 @@ export class LayerController {
         planId,
         name: layerName,
         type: layerType,
-        file
+        file,
+        pageNumber: pdfPageUserSelected ? parseInt(pdfPageUserSelected as string, 10) : undefined
       });
 
       return res.status(202).json(layer);

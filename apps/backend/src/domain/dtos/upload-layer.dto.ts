@@ -3,4 +3,5 @@ export interface UploadLayerDto {
   name: string;
   type: 'BASE' | 'OVERLAY';
   file: Express.Multer.File;
+  pageNumber?: number;
 }

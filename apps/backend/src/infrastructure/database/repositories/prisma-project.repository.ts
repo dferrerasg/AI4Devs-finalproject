@@ -5,16 +5,28 @@ import { prisma } from '../prisma';
 
 export class PrismaProjectRepository implements IProjectRepository {
   async save(project: Project): Promise<void> {
-    await prisma.project.create({
-      data: {
-        id: project.id,
-        title: project.title,
-        description: project.description,
-        architectId: project.architectId,
-        status: project.status,
-        createdAt: project.createdAt || new Date(), // Make sure to use passed date or now
-        updatedAt: project.updatedAt || new Date(),
-      },
+    // Transactional create: Project + Owner Membership
+    await prisma.$transaction(async (tx) => {
+      await tx.project.create({
+        data: {
+          id: project.id,
+          title: project.title,
+          description: project.description,
+          architectId: project.architectId,
+          status: project.status,
+          createdAt: project.createdAt || new Date(),
+          updatedAt: project.updatedAt || new Date(),
+        },
+      });
+
+      // Automatically add owner as member
+      await tx.projectMember.create({
+        data: {
+          projectId: project.id,
+          userId: project.architectId,
+          role: 'OWNER',
+        }
+      });
     });
   }
 

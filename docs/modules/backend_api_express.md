@@ -122,8 +122,8 @@ info:
   description: API Backend para la plataforma SaaS de gestión de planos arquitectónicos 'Tracé'.
   version: 1.0.0
 servers:
-  - url: /api/v1
-    description: Base path para la API
+  - url: /api
+    description: Base path para la API (Servidor Local: http://localhost:4000/api)
 
 components:
   securitySchemes:

@@ -28,10 +28,19 @@ export const ensureProjectPermission = (allowedRoles: ProjectRole[]) => {
       });
 
       if (!membership) {
-        // Double check if user is the architect (owner) of the project directly 
-        // usually Owner is also in members, but let's be safe or just strictly use members.
-        // The Schema has 'ProjectMember', created at project creation. 
-        // Let's assume strict membership.
+        // Fallback: Check if user is the architect (owner) directly
+        const project = await prisma.project.findUnique({
+          where: { id: projectId },
+          select: { architectId: true }
+        });
+
+        if (project && project.architectId === userId) {
+          // If the requirements allow OWNER, and user is the architect, let them pass
+          if (allowedRoles.includes(ProjectRole.OWNER)) {
+            return next();
+          }
+        }
+
         return res.status(403).json({ error: 'Access denied' });
       }
 

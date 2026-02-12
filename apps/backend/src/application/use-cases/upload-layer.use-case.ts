@@ -26,7 +26,8 @@ export class UploadLayerUseCase {
     await this.jobQueue.add('layer-processing', {
       layerId: savedLayer.id,
       fileUrl: fileUrl,
-      originalFilename: dto.file.originalname
+      originalFilename: dto.file.originalname,
+      pageNumber: dto.pageNumber
     });
 
     return savedLayer;

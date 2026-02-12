@@ -1,6 +1,9 @@
 import { PlanStatus } from './plan-status.enum';
+import { Layer } from '../layers/layer.entity';
 
 export class Plan {
+  public layers: Layer[] = [];
+
   constructor(
     public readonly id: string,
     public readonly projectId: string,

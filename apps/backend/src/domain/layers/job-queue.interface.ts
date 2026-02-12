@@ -1,8 +1,6 @@
-export interface LayerProcessingJob {
-  layerId: string;
-  fileUrl: string; // The "raw" file location
-  originalFilename: string;
-}
+import { LayerProcessingJob } from '@trace/core';
+
+export { LayerProcessingJob };
 
 export interface IJobQueue {
   add(jobName: string, data: LayerProcessingJob): Promise<void>;

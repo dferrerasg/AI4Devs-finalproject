@@ -4,7 +4,7 @@ import { Plan } from '@trace/core';
 export class ListProjectPlansUseCase {
   constructor(private planRepository: IPlanRepository) {}
 
-  async execute(projectId: string): Promise<Record<string, Plan[]>> {
+  async execute(projectId: string): Promise<{ sheetName: string; latestVersion: number; plans: Plan[] }[]> {
     const plans = await this.planRepository.findByProject(projectId);
     
     // Group by sheetName
@@ -17,6 +17,17 @@ export class ListProjectPlansUseCase {
       grouped[plan.sheetName].push(plan);
     });
 
-    return grouped;
+    // Transform to array expected by Frontend
+    return Object.keys(grouped).map(sheetName => {
+        const sheetPlans = grouped[sheetName];
+        // Sort by version desc
+        sheetPlans.sort((a, b) => b.version - a.version);
+        
+        return {
+            sheetName,
+            latestVersion: sheetPlans[0].version,
+            plans: sheetPlans
+        };
+    });
   }
 }

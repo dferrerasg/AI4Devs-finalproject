@@ -10,15 +10,28 @@ import { layerRoutes } from '@/interfaces/http/routes/layer.routes';
 const app = express();
 
 // Middlewares
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(cors({ origin: env.CORS_ORIGIN }));
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Static files (Uploads)
+// Mount /uploads to the local uploads directory
+import path from 'path';
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 // Routes
-app.use('/auth', authRouter);
-app.use('/api/projects', projectRoutes);
-app.use('/api/plans/:planId/layers', layerRoutes);
+const apiRouter = express.Router();
+
+app.use('/api', apiRouter);
+
+apiRouter.use('/auth', authRouter);
+apiRouter.use('/projects', projectRoutes);
+// La ruta de layers espera params directos, revisar si layerRoutes tiene mergeParams
+apiRouter.use('/plans/:planId/layers', layerRoutes); 
+
 
 // Health Check
 app.get('/health', (req, res) => {
