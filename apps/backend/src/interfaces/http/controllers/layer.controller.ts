@@ -27,7 +27,8 @@ export class LayerController {
         name: layerName,
         type: layerType,
         file,
-        pageNumber: pdfPageUserSelected ? parseInt(pdfPageUserSelected as string, 10) : undefined
+        pageNumber: pdfPageUserSelected ? parseInt(pdfPageUserSelected as string, 10) : undefined,
+        userId: (req as any).user.id
       });
 
       return res.status(202).json(layer);

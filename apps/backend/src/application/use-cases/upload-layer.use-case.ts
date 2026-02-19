@@ -24,6 +24,7 @@ export class UploadLayerUseCase {
 
     // 4. Dispatch Job to Worker
     await this.jobQueue.add('layer-processing', {
+      userId: dto.userId,
       layerId: savedLayer.id,
       fileUrl: fileUrl,
       originalFilename: dto.file.originalname,

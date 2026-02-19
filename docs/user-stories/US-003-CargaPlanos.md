@@ -62,6 +62,20 @@
 **Y** el Worker procesa cada página independientemente
 **Y** el plano resultante muestra la página 1 de fondo y la 3 superpuesta.
 
+### Escenario 4: Notificación visual de éxito (Real-time)
+**Dado** que el usuario está viendo el detalle de un plano
+**Y** acaba de subir una capa que está en estado PROCESSING
+**Cuando** el Worker finaliza la conversión de la imagen
+**Entonces** la capa aparece automáticamente en la lista de capas (sin F5)
+**Y** se muestra una notificación "Toast" de éxito.
+
+### Escenario 5: Notificación visual de error (Real-time)
+**Dado** que una capa está en proceso de carga
+**Cuando** el Worker falla al procesar el archivo (ej. archivo corrupto)
+**Entonces** la capa defectuosa desaparece de la lista
+**Y** se muestra una notificación de error con la razón del fallo.
+
+
 
 ## Tickets de Trabajo
 
@@ -122,4 +136,24 @@
     - Formulario dinámico: Generar un set de inputs (Nombre, Tipo) por cada página seleccionada.
     - Lógica de envío: Iterar sobre la selección y enviar peticiones secuenciales o paralelas al backend, o usar endpoint batch si disponible.
 - **Esfuerzo:** 8 pts
+
+### [BACK-005] Real-time Events Infrastructure
+- **Tipo:** Backend Feature
+- **Propósito:** Notificar al frontend cuando un job de procesamiento termina.
+- **Especificaciones Técnicas:**
+  - **Socket.io:** Implementar autenticación y "Rooms" privadas (`user:{userId}`).
+  - **Redis Events:** Usar `QueueEvents` de BullMQ para escuchar `completed` y `failed` de la cola `layer-processing`.
+  - **Bridge:** Al detectar evento de cola → Buscar `userId` del job → Emitir evento `layer:processed` o `layer:failed` al room del usuario.
+  - **Worker:** Asegurar que `userId` viaja en el payload del Job a través de BullMQ.
+- **Esfuerzo:** 3 pts
+
+### [FRONT-004] Real-time Layer Updates
+- **Tipo:** Frontend Feature
+- **Propósito:** Consumir eventos de socket para UX fluida.
+- **Especificaciones Técnicas:**
+  - **Plugin Socket:** Conexión automática al loguearse.
+  - **Store `plans`:** Acción `onLayerProcessed(layer)` que hace push al array local.
+  - **UI Feedback:** Componente de Toast para errores. Eliminación optimista o reactiva de items fallidos.
+- **Esfuerzo:** 3 pts
+
 

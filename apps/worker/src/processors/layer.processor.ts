@@ -63,7 +63,7 @@ export class LayerProcessor {
 
       // 3. Update status to READY (COMPLETED -> READY)
       // Update imageUrl if we converted the file (e.g. PDF -> PNG)
-      await prisma.layer.update({
+      const updatedLayer = await prisma.layer.update({
         where: { id: layerId },
         data: { 
             status: LayerStatus.READY,
@@ -71,6 +71,13 @@ export class LayerProcessor {
         },
       });
       console.log(`[LayerProcessor] Job completed for layer ${layerId}`);
+
+      return {
+        status: LayerStatus.READY,
+        layerId: updatedLayer.id,
+        planId: updatedLayer.planId,
+        imageUrl: updatedLayer.imageUrl
+      };
 
     } catch (error) {
       console.error(`[LayerProcessor] Job failed for layer ${layerId}:`, error);
