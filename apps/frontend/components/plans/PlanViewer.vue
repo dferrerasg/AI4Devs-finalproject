@@ -38,7 +38,7 @@
              <img 
                 v-for="layer in currentPlan?.layers?.filter(l => l.status === 'READY')" 
                 :key="layer.id"
-                :src="layer.imageUrl"
+                :src="getImageUrl(layer.imageUrl)"
                 class="absolute inset-0 w-full h-full object-contain"
                 :class="{'opacity-50': layer.type === 'OVERLAY'}"
              />
@@ -67,10 +67,26 @@ const props = defineProps<{
 
 const { setCurrentPlan, currentPlan, loading, error } = usePlans()
 const showUploadModal = ref(false)
+const config = useRuntimeConfig()
 
 const hasLayers = computed(() => {
     return currentPlan.value?.layers && currentPlan.value.layers.length > 0
 })
+
+const getImageUrl = (path?: string) => {
+    if (!path) return ''
+    if (path.startsWith('http')) return path
+    
+    // Explicit fallback to localhost:4000 if config is missing or empty
+    const configuredUrl = config.public.socketUrl || 'http://localhost:4000'
+    const baseUrl = configuredUrl.replace(/\/$/, '')
+    
+    // Ensure path starts with /
+    const cleanPath = path.startsWith('/') ? path : `/${path}`
+    
+    // Construct simplified URL
+    return `${baseUrl}${cleanPath}`
+}
 
 onMounted(() => {
     setCurrentPlan(props.planId, props.projectId)

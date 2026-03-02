@@ -52,6 +52,8 @@
             <slot />
         </main>
     </div>
+
+    <UiToast />
   </div>
 </template>
 

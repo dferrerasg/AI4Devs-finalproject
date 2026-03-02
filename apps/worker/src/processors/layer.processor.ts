@@ -62,15 +62,18 @@ export class LayerProcessor {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 3. Update status to READY (COMPLETED -> READY)
-      // Update imageUrl if we converted the file (e.g. PDF -> PNG)
+      // Convert absolute path to public URL path (relative to server root)
+      // Assumes structure .../uploads/...
+      const publicPath = inputPath.substring(inputPath.indexOf('/uploads'));
+
       const updatedLayer = await prisma.layer.update({
         where: { id: layerId },
         data: { 
             status: LayerStatus.READY,
-            imageUrl: inputPath // Update to the new processed file path (e.g. .png)
+            imageUrl: publicPath 
         },
       });
-      console.log(`[LayerProcessor] Job completed for layer ${layerId}`);
+      console.log(`[LayerProcessor] Job completed for layer ${layerId}. Public URL: ${publicPath}`);
 
       return {
         status: LayerStatus.READY,

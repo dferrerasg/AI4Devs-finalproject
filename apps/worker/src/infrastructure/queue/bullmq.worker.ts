@@ -7,7 +7,7 @@ export const setupWorker = () => {
   const layerProcessor = new LayerProcessor();
 
   const worker = new Worker<LayerProcessingJob>('layer-processing', async (job: Job<LayerProcessingJob>) => {
-    await layerProcessor.process(job);
+    return await layerProcessor.process(job);
   }, {
     connection: {
       host: env.REDIS_HOST,

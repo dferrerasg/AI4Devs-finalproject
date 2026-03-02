@@ -125,6 +125,27 @@ export const usePlansStore = defineStore('plans', {
         } catch (err: any) {
             throw new Error(err.message || 'Error en la subida de capa');
         }
+    },
+
+    updateLayerStatus(planId: string, layerId: string, status: 'PROCESSING' | 'READY' | 'ERROR', imageUrl?: string) {
+        if (this.currentPlan && this.currentPlan.id === planId) {
+            if (!this.currentPlan.layers) return;
+
+            const layer = this.currentPlan.layers.find(l => l.id === layerId);
+            if (layer) {
+                layer.status = status;
+                if (imageUrl) {
+                    layer.imageUrl = imageUrl;
+                }
+            }
+        }
+    },
+
+    removeLayer(planId: string, layerId: string) {
+        if (this.currentPlan && this.currentPlan.id === planId) {
+            if (!this.currentPlan.layers) return;
+            this.currentPlan.layers = this.currentPlan.layers.filter(l => l.id !== layerId);
+        }
     }
   }
 });

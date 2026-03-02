@@ -53,7 +53,7 @@ export class SocketService {
 
   private setupConnectionHandler() {
     this.io.on('connection', (socket: Socket) => {
-      const userId = socket.data.user.id;
+      const userId = socket.data.user.userId;
       console.log(`🔌 Client connected: ${socket.id} (User: ${userId})`);
 
       // Join user-specific room

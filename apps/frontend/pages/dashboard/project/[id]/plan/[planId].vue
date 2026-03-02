@@ -16,4 +16,5 @@ const route = useRoute()
 const projectId = computed(() => route.params.id as string)
 const planId = computed(() => route.params.planId as string)
 
+useRealtimeLayers()
 </script>

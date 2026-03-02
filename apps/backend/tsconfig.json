@@ -12,7 +12,8 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@trace/core": ["../../packages/core/dist"]
     }
   },
   "include": ["src/**/*"],
