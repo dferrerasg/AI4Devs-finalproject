@@ -63,7 +63,7 @@
 - **Equipo Asignado:** Backend/DBA
 - **Esfuerzo:** 3 pts
 
-### [BACK-005] API Endpoints: Pines y Comentarios
+### [BACK-007] API Endpoints: Pines y Comentarios
 - **Tipo:** Backend Feature
 - **Propósito:** Persistencia de coordenadas y mensajes.
 - **Especificaciones Técnicas:**
@@ -76,7 +76,7 @@
 - **Equipo Asignado:** Backend
 - **Esfuerzo:** 5 pts
 
-### [FRONT-006] UI Pines y Drawer de Comentarios
+### [FRONT-007] UI Pines y Drawer de Comentarios
 - **Tipo:** Frontend Feature
 - **Propósito:** Interacción visual para comentar.
 - **Especificaciones Técnicas:**

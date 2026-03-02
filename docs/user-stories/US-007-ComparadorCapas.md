@@ -45,7 +45,7 @@
 
 ## Tickets de Trabajo
 
-### [FRONT-007] Implementación Comparador de Opacidad
+### [FRONT-008] Implementación Comparador de Opacidad
 - **Tipo:** Frontend Feature
 - **Propósito:** Permitir superposición y transparencia variable.
 - **Especificaciones Técnicas:**

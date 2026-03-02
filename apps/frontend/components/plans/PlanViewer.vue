@@ -14,13 +14,22 @@
              {{ currentPlan?.sheetName }} <span class="text-gray-400 font-normal">v{{ currentPlan?.version }}</span>
           </h2>
           <div class="flex-1"></div>
-          <div class="text-xs text-gray-500">
-             Zoom: 100%
+          <div class="text-xs text-gray-500 font-mono">
+             Zoom: {{ Math.round(scale * 100) }}%
           </div>
        </div>
 
        <!-- Canvas Container -->
-       <div class="flex-1 overflow-auto p-8 relative flex items-center justify-center bg-dots">
+       <div 
+         ref="containerRef"
+         class="flex-1 overflow-hidden p-0 relative flex items-center justify-center bg-gray-50 bg-dots z-0 select-none cursor-grab"
+         :class="{ 'cursor-grabbing': isDragging }"
+         @wheel.prevent="onWheel"
+         @pointerdown="onPointerDown"
+         @pointermove="onPointerMove"
+         @pointerup="onPointerUp"
+         @pointercancel="onPointerUp"
+       >
           <div v-if="loading" class="text-gray-500 animate-pulse">Cargando plano...</div>
           <div v-else-if="error" class="text-red-500 bg-red-50 p-4 rounded border border-red-200">
              Error: {{ error }}
@@ -29,19 +38,35 @@
              <p class="mb-2">El plano está vacío.</p>
              <button @click="showUploadModal = true" class="text-primary hover:underline">Sube una capa base</button>
           </div>
-          <div v-else class="w-[800px] h-[600px] bg-white shadow-lg relative border border-gray-300">
-             <!-- Placeholder para el Canvas Real -->
-             <div class="absolute inset-0 flex items-center justify-center text-gray-300 select-none pointer-events-none">
-                AREA DEL VISOR (US-004)
+          <div v-else>
+             <!-- Transform Layer -->
+             <div 
+               class="plan-content origin-top-left will-change-transform absolute top-0 left-0"
+               :style="transformStyle"
+             >
+                <!-- Renderizado de capas superpuestas -->
+                <div class="relative w-full h-full"> 
+                  <template v-for="layer in currentPlan?.layers?.filter(l => l.status === 'READY')" :key="layer.id">
+                    <img 
+                      :src="getImageUrl(layer.imageUrl)" 
+                      class="max-w-none pointer-events-none absolute top-0 left-0" 
+                      draggable="false"
+                      @load="onImageLoad" 
+                    />
+                  </template>
+                </div>
              </div>
-             <!-- Renderizado simple de capas para feedback visual inmediato -->
-             <img 
-                v-for="layer in currentPlan?.layers?.filter(l => l.status === 'READY')" 
-                :key="layer.id"
-                :src="getImageUrl(layer.imageUrl)"
-                class="absolute inset-0 w-full h-full object-contain"
-                :class="{'opacity-50': layer.type === 'OVERLAY'}"
-             />
+
+             <!-- Controls Overlay -->
+             <div class="absolute bottom-6 right-6 z-10 transition-opacity duration-300 hover:opacity-100 opacity-90">
+               <PlanControls 
+                 :zoom-level="scale"
+                 @zoom-in="handleZoomIn"
+                 @zoom-out="handleZoomOut" 
+                 @reset="reset"
+                 @fit="handleFit"
+               />
+             </div>
           </div>
        </div>
     </div>
@@ -59,6 +84,7 @@
 <script setup lang="ts">
 import LayerSidebar from '@/components/layers/LayerSidebar.vue'
 import LayerUploadModal from '@/components/layers/LayerUploadModal.vue'
+import PlanControls from '@/components/plans/PlanControls.vue'
 
 const props = defineProps<{
     planId: string
@@ -69,6 +95,89 @@ const { setCurrentPlan, currentPlan, loading, error } = usePlans()
 const showUploadModal = ref(false)
 const config = useRuntimeConfig()
 
+// --- Navigation Logic (US-004) ---
+const containerRef = ref<HTMLElement | null>(null)
+// We track the first image to determine base dimensions for "Fit to Screen"
+const baseImageRef = ref<HTMLImageElement | null>(null)
+
+const { 
+  scale, 
+  transformStyle, 
+  isDragging,
+  zoomToPoint, 
+  startDrag, 
+  onDrag, 
+  stopDrag, 
+  reset,
+  fitToScreen
+} = usePlanNavigation()
+
+const onWheel = (e: WheelEvent) => {
+  if (!containerRef.value) return
+  const rect = containerRef.value.getBoundingClientRect()
+  const point = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  const delta = Math.sign(e.deltaY) 
+  zoomToPoint(delta, point)
+}
+
+const onPointerDown = (e: PointerEvent) => {
+  if (!containerRef.value) return
+  (e.target as Element).setPointerCapture(e.pointerId)
+  startDrag({ x: e.clientX, y: e.clientY })
+}
+
+const onPointerMove = (e: PointerEvent) => onDrag({ x: e.clientX, y: e.clientY })
+
+const onPointerUp = (e: PointerEvent) => {
+  if (e.target) (e.target as Element).releasePointerCapture(e.pointerId)
+  stopDrag()
+}
+
+const getCenterPoint = () => {
+  if (!containerRef.value) return { x: 0, y: 0 }
+  const rect = containerRef.value.getBoundingClientRect()
+  return { x: rect.width / 2, y: rect.height / 2 }
+}
+
+const handleZoomIn = () => zoomToPoint(-1, getCenterPoint())
+const handleZoomOut = () => zoomToPoint(1, getCenterPoint())
+
+const handleFit = () => {
+    // If we have a base image reference, use it
+    if (!containerRef.value || !baseImageRef.value) return
+    const rect = containerRef.value.getBoundingClientRect()
+    const img = baseImageRef.value
+    
+    // Fit only if we have dimensions
+    if (img.naturalWidth && img.naturalHeight) {
+       // Call composable logic
+       scale.value = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight) * 0.9
+       position.value.x = (rect.width - img.naturalWidth * scale.value) / 2
+       position.value.y = (rect.height - img.naturalHeight * scale.value) / 2
+    }
+}
+
+const onImageLoad = (e: Event) => {
+    const img = e.target as HTMLImageElement
+    // If it's the first image loading and view is default, set as base and fit
+    if (!baseImageRef.value) {
+        baseImageRef.value = img
+        // Wait next tick for layout to stabilize if needed, but direct calc works
+        handleFit()
+    }
+}
+
+// Keyboard shortcuts
+const handleKeydown = (e: KeyboardEvent) => {
+  if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return
+  const center = getCenterPoint()
+  switch(e.key) {
+    case '+': case '=': zoomToPoint(-1, center); break
+    case '-': zoomToPoint(1, center); break
+    case '0': case 'r': case 'R': reset(); break
+  }
+}
+
 const hasLayers = computed(() => {
     return currentPlan.value?.layers && currentPlan.value.layers.length > 0
 })
@@ -76,20 +185,19 @@ const hasLayers = computed(() => {
 const getImageUrl = (path?: string) => {
     if (!path) return ''
     if (path.startsWith('http')) return path
-    
-    // Explicit fallback to localhost:4000 if config is missing or empty
     const configuredUrl = config.public.socketUrl || 'http://localhost:4000'
     const baseUrl = configuredUrl.replace(/\/$/, '')
-    
-    // Ensure path starts with /
     const cleanPath = path.startsWith('/') ? path : `/${path}`
-    
-    // Construct simplified URL
     return `${baseUrl}${cleanPath}`
 }
 
 onMounted(() => {
     setCurrentPlan(props.planId, props.projectId)
+    window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown)
 })
 
 const onUploadSuccess = () => {
