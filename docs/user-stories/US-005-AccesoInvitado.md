@@ -54,7 +54,7 @@
 - **Equipo Asignado:** Backend/DBA
 - **Esfuerzo:** 2 pts
 
-### [BACK-004] Lógica de Tokens de Invitación
+### [BACK-006] Lógica de Tokens de Invitación
 - **Tipo:** Backend Feature
 - **Propósito:** Generar y validar enlaces de acceso público.
 - **Especificaciones Técnicas:**
@@ -65,7 +65,7 @@
 - **Equipo Asignado:** Backend
 - **Esfuerzo:** 3 pts
 
-### [FRONT-005] Layout Público (Guest)
+### [FRONT-006] Layout Público (Guest)
 - **Tipo:** Frontend Feature
 - **Propósito:** Adaptar la interfaz para usuarios sin cuenta.
 - **Especificaciones Técnicas:**

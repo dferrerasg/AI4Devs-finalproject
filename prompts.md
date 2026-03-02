@@ -397,7 +397,55 @@ Cada ticket incluye especificaciones técnicas concretas (endpoints, nombres de 
 
 **Prompt 2:**
 
+Model: Gemini 3 (Preview)
+```markdown
+# Rol
+Eres un experto en UX.
+
+# Tarea
+analizar #file:US-004-VisorInteractivo.md para revisar y definir:
+- cómo tiene que interactuar el usuario con los diferentes elementos para conseguir un flujo fluido.
+- elementos de pantalla de forma intuitiva.
+- disposición en pantalla de los elementos para un diseño consistente y usable.
+- consideraciones y modificaciones sobre los diseños y criterios de aceptación.
+
+Hazme una propuesta de resultado antes de modificar nada.
+```
+
+**Resumen de la conversación:**
+
+El asistente actuó como experto en UX para redefinir el diseño de interacción de la historia de usuario `US-004: Visor Interactivo`.
+Se propuso un modelo de interacción similar a herramientas de diseño estándar (Figma, Miro) para minimizar la curva de aprendizaje:
+- **Zoom Híbrido:** Rueda del ratón hacia la posición del cursor (no al centro) y gesto de "pinch" en tablet.
+- **Pan:** Clic y arrastre con cambio de cursor (Grab/Grabbing).
+- **UI Flotante:** Controles de navegación en esquina inferior derecha para accesibilidad móvil.
+
+El usuario refinó la propuesta solicitando explícitamente:
+1.  **Inclusión de atajos de teclado:** (+, -, 0/Reset) para accesibilidad.
+2.  **Tecnología Nativa:** Evitar librerías externas de momento.
+3.  **Scope:** Exclusión de rotación para fases futuras.
+
+El asistente actualizó el documento `US-004-VisorInteractivo.md` reflejando estos nuevos criterios de aceptación y diseño de pantallas.
+
 **Prompt 3:**
+
+Model: Gemini 3 (Preview)
+```markdown
+# Rol
+Eres un experto frontend developer con Nuxt.
+
+# Tarea
+Revisa los specs de #file:US-004-VisorInteractivo.md y actualiza el ticket de trabajo FRONT-005 para cumplir todos los requisitos y criterios.
+```
+
+**Resumen de la respuesta:**
+
+El asistente, actuando como experto técnico en Frontend con Nuxt, actualizó el ticket técnico `FRONT-005` dentro de la historia de usuario para guiar el desarrollo.
+Especificaciones técnicas definidas para garantizar rendimiento y UX:
+-   **Tecnología:** Uso de **CSS Transforms** (`translate/scale`) en lugar de manipulación directa de Canvas para aprovechar la GPU y simplificar el MVP.
+-   **Eventos:** Uso de **Pointer API** para unificar el soporte de Mouse y Touch con una sola lógica de código.
+-   **Arquitectura de Componentes:** Separación de `PlanViewer.vue` (Lógica de negocio y matemáticas de zoom) y `PlanControls.vue` (UI pura).
+-   **Restricciones:** Implementación de límites de navegación (boundaries) para evitar perder el plano de vista.
 
 ---
 
