@@ -14,8 +14,8 @@ El Worker opera principalmente sobre el Bounded Context de **FileProcessing**, p
 -   **Queue Consumer:** BullMQ (Redis) - Actúa como el "Controller" de este servicio.
 -   **Image Processing (Infrastructure Adapters):**
     -   `Sharp` (Optimización y recorte de imágenes).
-    -   `Ghostscript` / `PDF-Poppler` (Rasterización de vectores).
--   **Storage:** AWS SDK (S3 / MinIO).
+    -   `Ghostscript` (via `ghostscript-node` o `child_process`) para rasterización de PDF a PNG (300 DPI, png16m).
+-   **Storage:** AWS SDK (S3 / MinIO) o Local Filesystem (montado en `/uploads`).
 
 ## 4. Estructura de Directorios (Monorepo Strategy)
 

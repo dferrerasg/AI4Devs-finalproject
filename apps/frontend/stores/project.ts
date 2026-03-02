@@ -35,7 +35,7 @@ export const useProjectStore = defineStore('project', () => {
     error.value = null;
     try {
       const config = useRuntimeConfig();
-      const data = await $fetch<Project[]>(`${config.public.apiBase}/api/projects`, {
+      const data = await $fetch<Project[]>(`${config.public.apiBase}/projects`, {
         headers: {
           Authorization: `Bearer ${authStore.token}`
         }
@@ -54,7 +54,7 @@ export const useProjectStore = defineStore('project', () => {
     
     try {
       const config = useRuntimeConfig();
-      const data = await $fetch<Project>(`${config.public.apiBase}/api/projects`, {
+      const data = await $fetch<Project>(`${config.public.apiBase}/projects`, {
         method: 'POST',
         body: projectData,
         headers: {

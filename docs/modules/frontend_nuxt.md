@@ -7,13 +7,15 @@
 - **Gestión de Estado:** Pinia
 - **Cliente HTTP:** $fetch / ohmyfetch (Nativo de Nuxt)
 - **Comunicación Real-time:** Socket.io-client
+- **Visualizador PDF:** `pdfjs-dist` (Carga dinámica via CDN/unpkg para evitar SSR errors).
 
 ## 2. Objetivo
 Proveer una interfaz de usuario reactiva, rápida y optimizada para SEO (en las partes públicas) que permita a arquitectos y clientes visualizar planos, gestionar proyectos y colaborar en tiempo real. Actúa como consumidor de la API Backend.
 
 ## 3. Patrones y Buenas Prácticas
 - **Atomic Design Simplificado:** Organización de componentes en base a su complejidad (atoms, molecules, organisms) dentro de la carpeta `components`.
-- **Composables (Hooks):** Toda lógica de negocio reutilizable (auth, gestión de planos, lógica de sockets) se extrae a la carpeta `composables/` para mantener los componentes limpios ("Skinny Components").
+- **Composables (Hooks):** Toda lógica de negocio reutilizable (auth, gestión de planos, lógica de sockets) se extrae a la carpeta `composables/`.
+    *   *Hybrid Loading Strategy:* Los stores (ej. `plans.ts`) cargan datos básicos de caché para UX inmediata, y realizan fetch en background para datos pesados (capas).
 - **Tipado Estricto:** Uso de interfaces compartidas para modelos de datos (Proyecto, Usuario, Pin).
 - **Middlewares:** Para protección de rutas (AuthGuard) y redirecciones.
 - **Identidad Corporativa:** Definición de estilos globales mediante variables CSS mapeadas en Tailwind (`primary`, `secondary`, etc).

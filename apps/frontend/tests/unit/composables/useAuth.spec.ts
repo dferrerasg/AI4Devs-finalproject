@@ -33,7 +33,7 @@ describe('useAuth Composable', () => {
     
     await login({ email: 'test@test.com', password: 'password' })
     
-    expect(mockFetch).toHaveBeenCalledWith('http://localhost:4000/api/v1/auth/login', expect.objectContaining({
+    expect(mockFetch).toHaveBeenCalledWith('http://localhost:4000/api/auth/login', expect.objectContaining({
       method: 'POST',
       body: { email: 'test@test.com', password: 'password' }
     }))
@@ -55,12 +55,12 @@ describe('useAuth Composable', () => {
 
     await register({ email: 'test@test.com', password: 'pass', fullName: 'Name' })
 
-    expect(mockFetch).toHaveBeenNthCalledWith(1, 'http://localhost:4000/api/v1/auth/register', expect.objectContaining({
+    expect(mockFetch).toHaveBeenNthCalledWith(1, 'http://localhost:4000/api/auth/register', expect.objectContaining({
         method: 'POST',
         body: { email: 'test@test.com', password: 'pass', fullName: 'Name' }
     }))
 
-    expect(mockFetch).toHaveBeenNthCalledWith(2, 'http://localhost:4000/api/v1/auth/login', expect.objectContaining({
+    expect(mockFetch).toHaveBeenNthCalledWith(2, 'http://localhost:4000/api/auth/login', expect.objectContaining({
         body: { email: 'test@test.com', password: 'pass' }
     }))
   })

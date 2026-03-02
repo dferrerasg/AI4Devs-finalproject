@@ -27,7 +27,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     // @ts-ignore
     req.user = decoded;
     return next();
-  } catch (err) {
+  } catch (err: any) {
     return res.status(401).json({ error: 'Token invalid' });
   }
 };

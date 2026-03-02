@@ -1,25 +1,17 @@
 import http from 'http';
-import { Server } from 'socket.io';
 import app from './app';
 import { env } from '@/config/env';
 import { prisma } from '@/infrastructure/database/prisma';
+import { SocketService } from '@/infrastructure/websocket/socket.service';
+import { JobEventListener } from '@/infrastructure/events/job-event.listener';
 
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: env.CORS_ORIGIN,
-    methods: ['GET', 'POST']
-  }
-});
+// Initialize Socket Service
+SocketService.initialize(server);
 
-io.on('connection', (socket) => {
-  console.log('🔌 New client connected:', socket.id);
-  
-  socket.on('disconnect', () => {
-    console.log('❌ Client disconnected:', socket.id);
-  });
-});
+// Initialize Job Event Listener
+new JobEventListener();
 
 const start = async () => {
   try {
