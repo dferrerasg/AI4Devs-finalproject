@@ -14,6 +14,9 @@ export class PrismaProjectRepository implements IProjectRepository {
           description: project.description,
           architectId: project.architectId,
           status: project.status,
+          description: project.description,
+          shareToken: project.shareToken,
+          isPublic: project.isPublic,
           createdAt: project.createdAt || new Date(),
           updatedAt: project.updatedAt || new Date(),
         },
@@ -34,7 +37,7 @@ export class PrismaProjectRepository implements IProjectRepository {
     const projects = await prisma.project.findMany({
       where: {
         architectId: userId,
-        deletedAt: null // Only non-deleted projects? Or handled by status? Logic: deletedAt is for soft delete.
+        deletedAt: null 
       },
       orderBy: { updatedAt: 'desc' }
     });
@@ -45,6 +48,8 @@ export class PrismaProjectRepository implements IProjectRepository {
       p.architectId,
       p.status as ProjectStatus,
       p.description,
+      p.shareToken,
+      p.isPublic,
       p.createdAt,
       p.updatedAt,
       p.deletedAt
@@ -74,9 +79,34 @@ export class PrismaProjectRepository implements IProjectRepository {
         p.architectId,
         p.status as ProjectStatus,
         p.description,
+        p.shareToken,
+        p.isPublic,
         p.createdAt,
         p.updatedAt,
         p.deletedAt
+    );
+  }
+
+  async findByShareToken(token: string): Promise<Project | null> {
+    const p = await prisma.project.findUnique({
+      where: { shareToken: token }
+    });
+
+    if (!p) reshareToken: project.shareToken,
+              isPublic: project.isPublic,
+              turn null;
+
+    return new Project(
+      p.id,
+      p.title,
+      p.architectId,
+      p.status as ProjectStatus,
+      p.description,
+      p.shareToken,
+      p.isPublic,
+      p.createdAt,
+      p.updatedAt,
+      p.deletedAt
     );
   }
 
