@@ -54,16 +54,28 @@
 - **Equipo Asignado:** Backend/DBA
 - **Esfuerzo:** 2 pts
 
-### [BACK-006] Lógica de Tokens de Invitación
+### [BACK-006] Lógica de Tokens de Invitación y Guest Auth
 - **Tipo:** Backend Feature
-- **Propósito:** Generar y validar enlaces de acceso público.
+- **Propósito:** Generar, gestionar y validar enlaces de acceso público para invitados.
 - **Especificaciones Técnicas:**
-  - Endpoint `POST /projects/:id/share`: Generar UUID único y guardar en DB `project.share_token`.
-  - Endpoint `GET /public/projects/:token`: Validar y devolver info básica del proyecto (read-only).
+  - **Endpoints de Gestión (Project Owner):**
+    - `POST /projects/:id/share-token`: Generar o regenerar token único. Guarda en `project.share_token`.
+    - `GET /projects/:id/share-token`: Ver token activo.
+    - `DELETE /projects/:id/share-token`: Revocar acceso (nullify token).
+  - **Endpoints de Acceso (Guest):**
+    - `POST /auth/guest/login`: Intercambio de `shareToken` por `accessToken` (JWT).
+      - Input: `{ token: string }`
+      - Output: `{ accessToken: string, user: { role: 'GUEST', projectId: ... } }`
+  - **Seguridad:**
+    - El JWT de Guest tiene permisos limitados (READ_PROJECT, COMMENT).
+    - Middleware valida que el Guest JWT solo acceda al `projectId` vinculado.
 - **Criterios de Aceptación:**
-  - Token permite acceso a endpoints GET específicos sin cookie de sesión.
+  - Solo Owner/Editor puede generar/revocar.
+  - El login con token inválido retorna 401.
+  - El token revocado impide nuevos logins.
+  - Guest autenticado puede hacer GET /projects/:id y sus recursos.
 - **Equipo Asignado:** Backend
-- **Esfuerzo:** 3 pts
+- **Esfuerzo:** 5 pts
 
 ### [FRONT-006] Layout Público (Guest)
 - **Tipo:** Frontend Feature

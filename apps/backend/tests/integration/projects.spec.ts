@@ -5,20 +5,41 @@ import jwt from 'jsonwebtoken';
 import { env } from '@/config/env';
 
 // Mock Prisma
-jest.mock('@/infrastructure/database/prisma', () => ({
-  prisma: {
-    project: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      count: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
+jest.mock('@/infrastructure/database/prisma', () => {
+  const mockCreate = jest.fn();
+  const mockFindMany = jest.fn();
+  const mockCount = jest.fn();
+  const mockFindUnique = jest.fn();
+  const mockUpdate = jest.fn();
+  const mockUserFindUnique = jest.fn();
+  const mockProjectMemberCreate = jest.fn();
+
+  return {
+    prisma: {
+      project: {
+        create: mockCreate,
+        findMany: mockFindMany,
+        count: mockCount,
+        findUnique: mockFindUnique,
+        update: mockUpdate,
+      },
+      user: {
+        findUnique: mockUserFindUnique,
+      },
+      projectMember: {
+        create: mockProjectMemberCreate,
+      },
+      $transaction: jest.fn(async (callback) => {
+        // Create a mock transaction context
+        const tx = {
+          project: { create: mockCreate },
+          projectMember: { create: mockProjectMemberCreate },
+        };
+        return callback(tx);
+      }),
     },
-    user: {
-      findUnique: jest.fn(),
-    },
-  },
-}));
+  };
+});
 
 describe('Project Integration', () => {
   const projectsUrl = '/api/projects'; // Adjusted based on likely prefix
@@ -56,8 +77,19 @@ describe('Project Integration', () => {
         ...projectData,
         architectId: userId,
         status: 'ACTIVE',
+        shareToken: null,
+        isPublic: false,
         createdAt: new Date(),
         updatedAt: new Date(),
+        deletedAt: null,
+      });
+
+      // Mock ProjectMember Creation
+      (prisma.projectMember.create as jest.Mock).mockResolvedValue({
+        id: 'member-uuid-1',
+        projectId: 'project-uuid-1',
+        userId,
+        role: 'OWNER',
       });
 
       // Act
@@ -114,8 +146,19 @@ describe('Project Integration', () => {
             ...projectData,
             architectId: userId,
             status: 'ACTIVE',
+            shareToken: null,
+            isPublic: false,
             createdAt: new Date(),
             updatedAt: new Date(),
+            deletedAt: null,
+        });
+
+        // Mock ProjectMember Creation
+        (prisma.projectMember.create as jest.Mock).mockResolvedValue({
+          id: 'member-uuid-pro',
+          projectId: 'project-uuid-pro',
+          userId,
+          role: 'OWNER',
         });
   
         // Act

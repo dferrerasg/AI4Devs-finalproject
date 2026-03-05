@@ -11,9 +11,9 @@ El sistema se divide en contextos lógicos para desacoplar responsabilidades. En
     *   *Responsabilidad:* Gestión de identidades, autenticación y roles.
     *   *Entidades:* `User`, `Role`, `Credential`.
 2.  **Collaboration (Core Domain):**
-    *   *Responsabilidad:* Gestión de proyectos, planos, versiones y discusiones.
-    *   *Entidades:* `Project`, `Plan`, `Layer`, `Pin`, `Comment`.
-    *   *Eventos de Dominio:* `PlanUploaded`, `CommentAdded`.
+    *   *Responsabilidad:* Gestión de proyectos, planos, versiones, invitaciones y discusiones.
+    *   *Entidades:* `Project`, `Plan`, `Layer`, `Pin`, `Comment`, `Invitation`.
+    *   *Eventos de Dominio:* `PlanUploaded`, `CommentAdded`, `InvitationCreated`.
 3.  **FileProcessing (Support Domain):**
     *   *Responsabilidad:* Orquestación de la conversión y optimización de medios.
     *   *Entidades:* `ProcessingJob`, `FileMetadata`.
@@ -55,8 +55,13 @@ La estructura refleja la separación entre el "Core" (Dominio/Aplicación) y el 
 │       │   │       └── Application/
 │       │   │           ├── Project/
 │       │   │           │   ├── CreateProjectUseCase.ts
-│       │   │           │   ├── InviteUserToProjectUseCase.ts
-│       │   │           │   └── AcceptProjectInvitationUseCase.ts
+│       │   │           │   ├── DeleteProjectUseCase.ts
+│       │   │           │   └── ListUserProjectsUseCase.ts
+│       │   │           ├── Invitation/
+│       │   │           │   ├── CreateProjectInvitationUseCase.ts
+│       │   │           │   ├── GetProjectInvitationsUseCase.ts
+│       │   │           │   ├── RevokeProjectInvitationUseCase.ts
+│       │   │           │   └── GuestLoginUseCase.ts
 │       │   │           ├── Plan/
 │       │   │           │   ├── UploadPlanUseCase.ts
 │       │   │           │   └── AddLayerToPlanUseCase.ts
@@ -248,6 +253,47 @@ paths:
         '401':
           description: Credenciales inválidas
 
+  /auth/guest/login:
+    post:
+      summary: Inicio de sesión como Invitado (Guest)
+      description: Intercambia un token de invitación por un JWT de sesión limitada con permisos de solo lectura.
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  description: El token de invitación generado por un Owner/Editor del proyecto
+      responses:
+        '200':
+          description: Login de invitado exitoso
+          content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   accessToken:
+                     type: string
+                     description: JWT con rol GUEST y permisos READ_PROJECT, READ_PLANS, READ_LAYERS
+                   project:
+                     type: object
+                     properties:
+                       id:
+                         type: string
+                         format: uuid
+                       title:
+                         type: string
+        '401':
+           description: Token inválido, expirado o proyecto inactivo
+        '403':
+           description: Proyecto no está en estado ACTIVE
+
   # --- Collaboration Context (Projects) ---
   /projects:
     get:
@@ -346,8 +392,54 @@ paths:
                        enum: [OWNER, EDITOR, VIEWER]
 
   /projects/{projectId}/invitations:
+    get:
+      summary: Listar invitaciones activas del proyecto
+      tags: [Project Access]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+             type: string
+             format: uuid
+      responses:
+        '200':
+           description: Lista de invitaciones activas (PENDING y ACCEPTED)
+           content:
+             application/json:
+               schema:
+                 type: array
+                 items:
+                   type: object
+                   properties:
+                     id:
+                       type: string
+                       format: uuid
+                     token:
+                       type: string
+                       description: Token único para acceso de invitado
+                     email:
+                       type: string
+                       default: guest@system
+                     status:
+                       type: string
+                       enum: [PENDING, ACCEPTED, EXPIRED]
+                     expiresAt:
+                       type: string
+                       format: date-time
+                     createdAt:
+                       type: string
+                       format: date-time
+        '403':
+           description: Requiere rol OWNER o EDITOR
+        '404':
+           description: Proyecto no encontrado
+
     post:
-      summary: Invitar usuario por email
+      summary: Crear nueva invitación (generar token)
+      description: Genera un token único para acceso de invitado con permisos de solo lectura. Solo OWNER y EDITOR pueden crear invitaciones.
       tags: [Project Access]
       security:
         - bearerAuth: []
@@ -359,27 +451,71 @@ paths:
              type: string
              format: uuid
       requestBody:
-        required: true
         content:
           application/json:
              schema:
                type: object
-               required: [email]
                properties:
                  email:
                    type: string
                    format: email
-                 role:
+                   description: Email opcional para tracking (por defecto guest@system)
+                 expiresAt:
                    type: string
-                   enum: [EDITOR, VIEWER]
-                   default: VIEWER
+                   format: date-time
+                   description: Fecha de expiración opcional (por defecto 1 año)
       responses:
         '201':
-           description: Invitación enviada exitosamente
-        '400':
-           description: El usuario ya es miembro o tiene invitación pendiente
+           description: Invitación creada exitosamente
+           content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   id:
+                     type: string
+                     format: uuid
+                   token:
+                     type: string
+                   email:
+                     type: string
+                   status:
+                     type: string
+                     example: PENDING
+                   expiresAt:
+                     type: string
+                     format: date-time
         '403':
            description: Requiere rol OWNER o EDITOR
+        '404':
+           description: Proyecto no encontrado
+
+  /projects/{projectId}/invitations/{token}:
+    delete:
+      summary: Revocar invitación (invalidar token)
+      description: Cambia el estado de la invitación a EXPIRED, invalidando el token permanentemente. Solo OWNER y EDITOR pueden revocar.
+      tags: [Project Access]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Invitación revocada exitosamente
+        '403':
+          description: Requiere rol OWNER o EDITOR
+        '404':
+          description: Invitación no encontrada
 
   /projects/{projectId}/users/{userId}:
     delete:
@@ -408,9 +544,9 @@ paths:
 
   /projects/{projectId}/share-token:
      post:
-       summary: Generar/Obtener token para acceso público (Guest)
+       summary: Generar/Regenerar token para acceso público (Guest)
        tags: [Project Access]
-       description: Soporte para US-005. Permite acceso de solo lectura sin login.
+       description: Genera un nuevo shareToken para el proyecto. Invalida el anterior si existía.
        parameters:
          - in: path
            name: projectId
@@ -418,18 +554,9 @@ paths:
            schema:
              type: string
              format: uuid
-       requestBody:
-         content:
-           application/json:
-             schema:
-               type: object
-               properties:
-                 enable:
-                   type: boolean
-                   default: true
        responses:
-         '200':
-           description: Token generado
+         '201':
+           description: Token generado exitosamente
            content:
              application/json:
                schema:
@@ -439,7 +566,42 @@ paths:
                      type: string
                    url:
                      type: string
-                     description: URL completa para compartir
+     get:
+       summary: Obtener el token de acceso público actual
+       tags: [Project Access]
+       parameters:
+         - in: path
+           name: projectId
+           required: true
+           schema:
+             type: string
+             format: uuid
+       responses:
+         '200':
+           description: Token actual
+           content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   token:
+                     type: string
+                     nullable: true
+                   isEnabled:
+                     type: boolean
+     delete:
+       summary: Revocar el acceso público (Eliminar token)
+       tags: [Project Access]
+       parameters:
+         - in: path
+           name: projectId
+           required: true
+           schema:
+              type: string
+              format: uuid
+       responses:
+          '204':
+            description: Token eliminado, acceso público desactivado
 
   # --- Collaboration Context (Plans) ---
   /projects/{projectId}/plans:

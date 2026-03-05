@@ -42,6 +42,8 @@ export class DeleteProjectUseCase {
         project.architectId,
         'ARCHIVED', // status
         project.description,
+        project.shareToken,
+        project.isPublic,
         project.createdAt,
         new Date(), // updatedAt
         new Date()  // deletedAt

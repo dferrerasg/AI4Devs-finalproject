@@ -23,9 +23,19 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   }
 
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
+    const decoded: any = jwt.verify(token, env.JWT_SECRET);
+    
+    // Attach user info to request
     // @ts-ignore
-    req.user = decoded;
+    req.user = {
+      id: decoded.sub,
+      userId: decoded.userId || decoded.sub, // For backward compatibility
+      email: decoded.email,
+      role: decoded.role || 'CLIENT',
+      projectId: decoded.projectId, // Only for GUEST
+      permissions: decoded.permissions, // Only for GUEST
+    };
+    
     return next();
   } catch (err: any) {
     return res.status(401).json({ error: 'Token invalid' });
