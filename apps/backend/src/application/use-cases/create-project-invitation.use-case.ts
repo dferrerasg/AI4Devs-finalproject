@@ -21,7 +21,7 @@ export class CreateProjectInvitationUseCase {
     }
 
     // 2. Verificar permisos (Owner o Editor)
-    const hasPermission = await this.checkPermissions(dto.projectId, userId);
+    const hasPermission = await this.checkPermissions(userId, dto.projectId);
     if (!hasPermission) {
       throw new Error('Forbidden: Only Owner or Editor can create invitations');
     }

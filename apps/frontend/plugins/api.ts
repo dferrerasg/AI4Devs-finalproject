@@ -1,17 +1,24 @@
 import { defineNuxtPlugin } from '#app';
+import { useAuthToken } from '~/composables/useAuthToken';
+import { useGuestStore } from '~/stores/guest';
 import { useAuthStore } from '~/stores/auth';
 
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig();
+  const guestStore = useGuestStore();
   const authStore = useAuthStore();
 
   const api = $fetch.create({
     baseURL: config.public.apiBase,
     onRequest({ request, options }) {
-      const token = authStore.token;
+      // Usar el composable para obtener el token
+      const { token } = useAuthToken();
+      const tokenValue = token.value;
       
-      if (token) {
-        const authHeaderValue = `Bearer ${token}`;
+      console.log('[API Plugin] Request:', request, 'Token:', !!tokenValue);
+      
+      if (tokenValue) {
+        const authHeaderValue = `Bearer ${tokenValue}`;
         
         options.headers = options.headers || {};
         
@@ -32,6 +39,11 @@ export default defineNuxtPlugin((nuxtApp) => {
     },
     onResponseError({ response }) {
       if (response.status === 401) {
+        // Si es guest, no redirigir al login
+        if (guestStore.isGuest) {
+          console.error('Guest authentication failed');
+          return;
+        }
         authStore.clearAuth();
         navigateTo('/login');
       }
