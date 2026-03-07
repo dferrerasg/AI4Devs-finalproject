@@ -1,9 +1,9 @@
 <template>
   <div class="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-100"> 
-    <!-- Sidebar -->
+    <!-- Sidebar (ocultar botón de agregar en modo guest) -->
     <LayerSidebar 
       :layers="currentPlan?.layers || []" 
-      @add-layer="showUploadModal = true"
+      @add-layer="!isGuestMode && (showUploadModal = true)"
     />
 
     <!-- Main Stage Area -->
@@ -36,7 +36,7 @@
           </div>
           <div v-else-if="!hasLayers" class="text-center text-gray-400">
              <p class="mb-2">El plano está vacío.</p>
-             <button @click="showUploadModal = true" class="text-primary hover:underline">Sube una capa base</button>
+             <button v-if="!isGuestMode" @click="showUploadModal = true" class="text-primary hover:underline">Sube una capa base</button>
           </div>
           <div v-else>
              <!-- Transform Layer -->
@@ -71,9 +71,9 @@
        </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Modals (solo mostrar si no es modo guest) -->
     <LayerUploadModal 
-       v-if="currentPlan"
+       v-if="currentPlan && !isGuestMode"
        v-model="showUploadModal" 
        :plan-id="currentPlan.id"
        @success="onUploadSuccess"
@@ -89,6 +89,7 @@ import PlanControls from '@/components/plans/PlanControls.vue'
 const props = defineProps<{
     planId: string
     projectId?: string
+    isGuestMode?: boolean
 }>()
 
 const { setCurrentPlan, currentPlan, loading, error } = usePlans()

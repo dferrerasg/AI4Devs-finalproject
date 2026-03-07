@@ -14,7 +14,6 @@ export class PrismaProjectRepository implements IProjectRepository {
           description: project.description,
           architectId: project.architectId,
           status: project.status,
-          description: project.description,
           shareToken: project.shareToken,
           isPublic: project.isPublic,
           createdAt: project.createdAt || new Date(),
@@ -92,9 +91,7 @@ export class PrismaProjectRepository implements IProjectRepository {
       where: { shareToken: token }
     });
 
-    if (!p) reshareToken: project.shareToken,
-              isPublic: project.isPublic,
-              turn null;
+    if (!p) return null;
 
     return new Project(
       p.id,

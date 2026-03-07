@@ -5,7 +5,11 @@ import { ProjectRole } from '@prisma/client';
 export const ensureProjectPermission = (allowedRoles: ProjectRole[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     // @ts-ignore - 'user' is populated by authMiddleware
-    const userId = req.user?.userId; 
+    const userId = req.user?.userId;
+    // @ts-ignore
+    const userRole = req.user?.role;
+    // @ts-ignore
+    const guestProjectId = req.user?.projectId;
     const projectId = req.params.projectId || req.body.projectId;
 
     if (!userId) {
@@ -17,6 +21,21 @@ export const ensureProjectPermission = (allowedRoles: ProjectRole[]) => {
     }
 
     try {
+      // Special case: GUEST users
+      if (userRole === 'GUEST') {
+        // Guests can only access their assigned project
+        if (guestProjectId !== projectId) {
+          return res.status(403).json({ error: 'Access denied' });
+        }
+        
+        // Guests have read-only permissions (equivalent to VIEWER)
+        if (allowedRoles.includes(ProjectRole.VIEWER)) {
+          return next();
+        }
+        
+        return res.status(403).json({ error: 'Guests have read-only access' });
+      }
+
       // 1. Check if user is member of the project
       const membership = await prisma.projectMember.findUnique({
         where: {

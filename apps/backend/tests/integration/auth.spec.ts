@@ -17,8 +17,8 @@ jest.mock('@/infrastructure/database/prisma', () => ({
 }));
 
 describe('Auth Integration', () => {
-  const registerUrl = '/auth/register';
-  const loginUrl = '/auth/login';
+  const registerUrl = '/api/auth/register';
+  const loginUrl = '/api/auth/login';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -136,7 +136,7 @@ describe('Auth Integration', () => {
 
       // Act
       const response = await request(app)
-        .get('/auth/me')
+        .get('/api/auth/me')
         .set('Authorization', `Bearer ${token}`);
 
       // Assert
@@ -146,7 +146,7 @@ describe('Auth Integration', () => {
     });
 
     it('should return 401 if no token provided', async () => {
-      const response = await request(app).get('/auth/me');
+      const response = await request(app).get('/api/auth/me');
       expect(response.status).toBe(401);
     });
   });

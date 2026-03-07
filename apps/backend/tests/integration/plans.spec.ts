@@ -178,10 +178,20 @@ describe('Plan Integration', () => {
 
       // Assert
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('Ground');
-      expect(response.body.Ground).toHaveLength(2);
-      expect(response.body).toHaveProperty('Roof');
-      expect(response.body.Roof).toHaveLength(1);
+      expect(response.body).toBeInstanceOf(Array);
+      expect(response.body).toHaveLength(2);
+      
+      // Find Ground and Roof sheets
+      const groundSheet = response.body.find((s: any) => s.sheetName === 'Ground');
+      const roofSheet = response.body.find((s: any) => s.sheetName === 'Roof');
+      
+      expect(groundSheet).toBeDefined();
+      expect(groundSheet.plans).toHaveLength(2);
+      expect(groundSheet.latestVersion).toBe(2);
+      
+      expect(roofSheet).toBeDefined();
+      expect(roofSheet.plans).toHaveLength(1);
+      expect(roofSheet.latestVersion).toBe(1);
     });
   });
 });

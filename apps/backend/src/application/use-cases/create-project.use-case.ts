@@ -33,9 +33,11 @@ export class CreateProjectUseCase {
         userId,
         'ACTIVE',
         dto.description,
-        new Date(),
-        new Date(),
-        null
+        null, // shareToken
+        false, // isPublic
+        new Date(), // createdAt
+        new Date(), // updatedAt
+        null // deletedAt
     );
 
     // 3. Persist

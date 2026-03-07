@@ -11,4 +11,34 @@ export class Invitation {
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}
+
+  canBeUsed(): boolean {
+    return this.status === 'PENDING' || this.status === 'ACCEPTED';
+  }
+
+  markAsAccepted(): Invitation {
+    return new Invitation(
+      this.id,
+      this.projectId,
+      this.email,
+      this.token,
+      this.expiresAt,
+      'ACCEPTED',
+      this.createdAt,
+      new Date()
+    );
+  }
+
+  markAsExpired(): Invitation {
+    return new Invitation(
+      this.id,
+      this.projectId,
+      this.email,
+      this.token,
+      this.expiresAt,
+      'EXPIRED',
+      this.createdAt,
+      new Date()
+    );
+  }
 }

@@ -13,6 +13,11 @@ router.post('/', projectController.create);
 router.get('/', projectController.index);
 router.delete('/:id', projectController.delete);
 
+// Invitation routes
+router.post('/:id/invitations', projectController.createInvitation);
+router.get('/:id/invitations', projectController.getInvitations);
+router.delete('/:id/invitations/:token', projectController.revokeInvitation);
+
 // Nested routes
 router.use('/:projectId/plans', planRoutes);
 
