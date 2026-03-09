@@ -652,51 +652,344 @@ paths:
           description: Datos del plano para el visor (incluye URLs de tiles/imágenes)
 
   # --- Collaboration Context (Discussion) ---
-  /plans/{planId}/pins:
+  /layers/{layerId}/pins:
     get:
-      summary: Obtener pines de un plano
+      summary: Listar pines de una capa
+      description: Obtiene todos los pines de una capa, opcionalmente filtrados por estado. Soporta autenticación de usuarios y guests.
       tags: [Discussion]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
-          name: planId
+          name: layerId
           required: true
           schema:
             type: string
+            format: uuid
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [OPEN, RESOLVED]
+          description: Filtrar pines por estado
+      responses:
+        '200':
+          description: Lista de pines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    layerId:
+                      type: string
+                      format: uuid
+                    xCoord:
+                      type: number
+                      format: float
+                      minimum: 0
+                      maximum: 1
+                      description: Coordenada X normalizada (0-1)
+                    yCoord:
+                      type: number
+                      format: float
+                      minimum: 0
+                      maximum: 1
+                      description: Coordenada Y normalizada (0-1)
+                    status:
+                      type: string
+                      enum: [OPEN, RESOLVED]
+                    createdBy:
+                      type: string
+                      format: uuid
+                      nullable: true
+                      description: ID del usuario que creó el pin (null para guests)
+                    guestName:
+                      type: string
+                      nullable: true
+                      description: Nombre del guest que creó el pin (null para usuarios autenticados)
+                    createdAt:
+                      type: string
+                      format: date-time
+                    updatedAt:
+                      type: string
+                      format: date-time
+        '401':
+          description: No autenticado
+        '404':
+          description: Capa no encontrada
+
     post:
-      summary: Crear un pin en coordenadas X,Y
+      summary: Crear un pin con comentario inicial
+      description: Crea un pin en coordenadas normalizadas (0-1) con un comentario inicial obligatorio. Soporta usuarios autenticados y guests.
       tags: [Discussion]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
-          name: planId
+          name: layerId
           required: true
           schema:
             type: string
+            format: uuid
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
-              required: [x, y]
+              required: [xCoord, yCoord, content]
               properties:
-                x: 
+                xCoord:
                   type: number
-                y: 
+                  format: float
+                  minimum: 0
+                  maximum: 1
+                  description: Coordenada X normalizada (0-1)
+                yCoord:
                   type: number
-                initialComment:
+                  format: float
+                  minimum: 0
+                  maximum: 1
+                  description: Coordenada Y normalizada (0-1)
+                content:
                   type: string
+                  minLength: 1
+                  maxLength: 300
+                  description: Comentario inicial del pin
       responses:
         '201':
-          description: Pin creado
+          description: Pin creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  layerId:
+                    type: string
+                    format: uuid
+                  xCoord:
+                    type: number
+                    format: float
+                  yCoord:
+                    type: number
+                    format: float
+                  status:
+                    type: string
+                    enum: [OPEN]
+                  createdBy:
+                    type: string
+                    format: uuid
+                    nullable: true
+                  guestName:
+                    type: string
+                    nullable: true
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        content:
+                          type: string
+                        authorId:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        guestName:
+                          type: string
+                          nullable: true
+                        createdAt:
+                          type: string
+                          format: date-time
+        '400':
+          description: Datos inválidos (coordenadas fuera de rango, contenido vacío o muy largo)
+        '401':
+          description: No autenticado
+        '404':
+          description: Capa no encontrada
 
-  /pins/{pinId}/comments:
-    post:
-      summary: Añadir comentario a un hilo
+  /pins/{pinId}:
+    get:
+      summary: Obtener pin con sus comentarios
+      description: Retorna un pin específico con todos sus comentarios no eliminados
       tags: [Discussion]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: pinId
           required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pin con comentarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  layerId:
+                    type: string
+                    format: uuid
+                  xCoord:
+                    type: number
+                    format: float
+                  yCoord:
+                    type: number
+                    format: float
+                  status:
+                    type: string
+                    enum: [OPEN, RESOLVED]
+                  createdBy:
+                    type: string
+                    format: uuid
+                    nullable: true
+                  guestName:
+                    type: string
+                    nullable: true
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        content:
+                          type: string
+                        authorId:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        guestName:
+                          type: string
+                          nullable: true
+                        createdAt:
+                          type: string
+                          format: date-time
+        '401':
+          description: No autenticado
+        '404':
+          description: Pin no encontrado o eliminado
+
+    delete:
+      summary: Eliminar pin (soft delete)
+      description: Marca el pin como eliminado (soft delete). Solo el creador puede eliminar su propio pin.
+      tags: [Discussion]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: pinId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Pin eliminado exitosamente
+        '401':
+          description: No autenticado
+        '403':
+          description: No tienes permiso para eliminar este pin (solo el creador puede eliminarlo)
+        '404':
+          description: Pin no encontrado o ya eliminado
+
+  /pins/{pinId}/status:
+    patch:
+      summary: Actualizar estado del pin (resolver/reabrir)
+      description: Cambia el estado de un pin entre OPEN y RESOLVED. Solo usuarios autenticados pueden cambiar el estado (guests no pueden).
+      tags: [Discussion]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: pinId
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [OPEN, RESOLVED]
+      responses:
+        '200':
+          description: Estado del pin actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [OPEN, RESOLVED]
+                  updatedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Estado inválido
+        '401':
+          description: No autenticado
+        '403':
+          description: Los guests no pueden cambiar el estado de los pines
+        '404':
+          description: Pin no encontrado
+
+  /pins/{pinId}/comments:
+    post:
+      summary: Añadir comentario a un pin
+      description: Agrega un nuevo comentario a un pin existente. Soporta usuarios autenticados y guests.
+      tags: [Discussion]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: pinId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -705,19 +998,63 @@ paths:
               properties:
                 content:
                   type: string
+                  minLength: 1
+                  maxLength: 300
+                  description: Contenido del comentario
       responses:
         '201':
-          description: Comentario añadido
+          description: Comentario añadido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  pinId:
+                    type: string
+                    format: uuid
+                  content:
+                    type: string
+                  authorId:
+                    type: string
+                    format: uuid
+                    nullable: true
+                  guestName:
+                    type: string
+                    nullable: true
+                  createdAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Contenido inválido (vacío o muy largo)
+        '401':
+          description: No autenticado
+        '404':
+          description: Pin no encontrado
 
-  /pins/{pinId}/resolve:
-    patch:
-      summary: Marcar pin como resuelto
+  /comments/{commentId}:
+    delete:
+      summary: Eliminar comentario (soft delete)
+      description: Marca el comentario como eliminado (soft delete). Solo el creador puede eliminar su propio comentario.
       tags: [Discussion]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
-          name: pinId
+          name: commentId
           required: true
+          schema:
+            type: string
+            format: uuid
       responses:
-        '200':
-          description: Pin actualizado a estado 'RESOLVED'
+        '204':
+          description: Comentario eliminado exitosamente
+        '401':
+          description: No autenticado
+        '403':
+          description: No tienes permiso para eliminar este comentario (solo el creador puede eliminarlo)
+        '404':
+          description: Comentario no encontrado o ya eliminado
 ```

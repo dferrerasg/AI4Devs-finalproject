@@ -34,6 +34,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
       role: decoded.role || 'CLIENT',
       projectId: decoded.projectId, // Only for GUEST
       permissions: decoded.permissions, // Only for GUEST
+      guestName: decoded.guestName, // Only for GUEST
     };
     
     return next();

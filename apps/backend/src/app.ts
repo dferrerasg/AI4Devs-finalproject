@@ -6,6 +6,8 @@ import { env } from '@/config/env';
 import authRouter from '@/interfaces/http/routes/auth.routes';
 import { projectRoutes } from '@/interfaces/http/routes/project.routes';
 import { layerRoutes } from '@/interfaces/http/routes/layer.routes';
+import { pinRoutes, layerPinRouter } from '@/interfaces/http/routes/pin.routes';
+import { commentRoutes } from '@/interfaces/http/routes/comment.routes';
 
 const app = express();
 
@@ -30,7 +32,10 @@ app.use('/api', apiRouter);
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/projects', projectRoutes);
 // La ruta de layers espera params directos, revisar si layerRoutes tiene mergeParams
-apiRouter.use('/plans/:planId/layers', layerRoutes); 
+apiRouter.use('/plans/:planId/layers', layerRoutes);
+apiRouter.use('/layers/:layerId/pins', layerPinRouter);
+apiRouter.use('/pins', pinRoutes);
+apiRouter.use('/comments', commentRoutes); 
 
 
 // Health Check
