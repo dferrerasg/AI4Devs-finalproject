@@ -20,6 +20,8 @@ model User {
 
   projects           Project[]       @relation("OwnerProjects")
   projectMemberships ProjectMember[]
+  pins               Pin[]
+  comments           Comment[]
 
   @@map("users")
 }
@@ -106,6 +108,8 @@ model Layer {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
+  pins      Pin[]
+
   @@map("layers")
 }
 
@@ -139,4 +143,46 @@ enum InvitationStatus {
 enum LayerType {
   BASE
   OVERLAY
+}
+
+model Pin {
+  id        String    @id @default(uuid())
+  layerId   String    @map("layer_id")
+  layer     Layer     @relation(fields: [layerId], references: [id], onDelete: Cascade)
+  xCoord    Decimal   @map("x_coord") @db.Decimal(10, 8)
+  yCoord    Decimal   @map("y_coord") @db.Decimal(10, 8)
+  status    PinStatus @default(OPEN)
+  createdBy String?   @map("created_by")
+  creator   User?     @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  guestName String?   @map("guest_name")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  comments  Comment[]
+
+  @@index([layerId, status])
+  @@index([createdAt])
+  @@map("pins")
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  pinId     String    @map("pin_id")
+  pin       Pin       @relation(fields: [pinId], references: [id], onDelete: Cascade)
+  authorId  String?   @map("author_id")
+  author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  guestName String?   @map("guest_name")
+  content   String    @db.Text
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([pinId, createdAt])
+  @@map("comments")
+}
+
+enum PinStatus {
+  OPEN
+  RESOLVED
 }

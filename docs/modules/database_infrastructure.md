@@ -83,11 +83,13 @@ erDiagram
     %% Collaboration
     Pin {
         UUID id PK
-        UUID plan_id FK
-        UUID layer_id FK "Opcional, solo contexto"
-        Float x_coord "Porcentaje 0-100 (Responsive)"
-        Float y_coord "Porcentaje 0-100 (Responsive)"
+        UUID layer_id FK
+        Decimal x_coord "Coordenada normalizada 0.0-1.0"
+        Decimal y_coord "Coordenada normalizada 0.0-1.0"
         Enum status "OPEN | RESOLVED"
+        UUID created_by FK "Nullable para guests"
+        String guest_name "Identificador de invitado"
+        DateTime deleted_at "Soft delete"
         DateTime created_at
         DateTime updated_at
     }
@@ -95,19 +97,23 @@ erDiagram
     Comment {
         UUID id PK
         UUID pin_id FK
-        UUID author_id FK
+        UUID author_id FK "Nullable para guests"
+        String guest_name "Identificador de invitado"
         Text content
-        String attachment_url "Opcional"
+        DateTime deleted_at "Soft delete"
         DateTime created_at
+        DateTime updated_at
     }
 
     %% Relationships
     User ||--o{ Project : "owns"
     User ||--o{ ProjectMember : "member of"
+    User ||--o{ Pin : "creates"
+    User ||--o{ Comment : "authors"
     Project ||--o{ ProjectMember : "members"
     Project ||--o{ Plan : "versions/sheets"
     Plan ||--o{ Layer : "layers"
-    Plan ||--o{ Pin : "annotations"
+    Layer ||--o{ Pin : "annotations"
     Pin ||--o{ Comment : "discussion"
 ```
 
@@ -135,10 +141,27 @@ erDiagram
     *   `opacity_default`: Valor inicial para el slider (0.0 - 1.0).
 
 #### Colaboración
-*   **Pin:** Anotación posicional.
-    *   Vinculado a un `Plan` (versión específica). Si se sube una v2, la v2 empieza limpia (decision de diseño).
-    *   `x_coord`, `y_coord`: Almacenados como `Float` (porcentaje) para adaptarse a cualquier viewport.
-*   **Comment:** Chat lineal sobre el Pin.
+*   **Pin:** Anotación posicional sobre capas de planos.
+    *   Vinculado a un `Layer` específico. Los pines están asociados a capas concretas para mayor granularidad.
+    *   `x_coord`, `y_coord`: Almacenados como `Decimal(10,8)` con valores normalizados (0.0 - 1.0) para responsividad. Mayor precisión que Float.
+    *   `status`: Enum `PinStatus` (OPEN, RESOLVED) para flujo de trabajo de revisiones.
+    *   `created_by`: Referencia nullable a `User`. Permite creación por invitados anónimos.
+    *   `guest_name`: String opcional para identificar colaboradores invitados sin cuenta.
+    *   `deleted_at`: Soft delete para mantener historial de colaboración.
+    *   **Índices:**
+        *   `(layer_id, status)`: Optimiza queries de pines activos por capa.
+        *   `(created_at)`: Para ordenamiento cronológico.
+*   **Comment:** Thread de discusión lineal sobre cada Pin.
+    *   `pin_id`: Cascada en delete. Si se elimina el pin, se eliminan los comentarios.
+    *   `author_id`: Referencia nullable a `User`. Soporta comentarios de invitados.
+    *   `guest_name`: Identificador para invitados sin autenticación.
+    *   `content`: Texto largo (TEXT) sin límite restrictivo.
+    *   `deleted_at`: Soft delete para auditoría.
+    *   **Índice:**
+        *   `(pin_id, created_at)`: Optimiza carga de threads ordenados cronológicamente.
+    *   **Comportamiento de Cascada:**
+        *   `ON DELETE CASCADE` desde Pin: Eliminar pin elimina comentarios.
+        *   `ON DELETE SET NULL` desde User: Eliminar usuario mantiene comentarios pero autor queda null.
 
 ## 3. Estrategia de Redis
 Redis cumple un rol doble y crítico:
