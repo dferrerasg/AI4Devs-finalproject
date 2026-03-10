@@ -113,6 +113,7 @@ export class PinController {
 
       const pinsResponse = pins.map((pin) => ({
         id: pin.id,
+        layerId: pin.layerId,
         xCoord: pin.xCoord,
         yCoord: pin.yCoord,
         status: pin.status,

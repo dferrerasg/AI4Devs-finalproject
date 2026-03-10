@@ -29,7 +29,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     // @ts-ignore
     req.user = {
       id: decoded.sub,
-      userId: decoded.userId || decoded.sub, // For backward compatibility
+      userId: decoded.role === 'GUEST' ? null : (decoded.userId || decoded.sub), // Guests don't have a real userId
       email: decoded.email,
       role: decoded.role || 'CLIENT',
       projectId: decoded.projectId, // Only for GUEST

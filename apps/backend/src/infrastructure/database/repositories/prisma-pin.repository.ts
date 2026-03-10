@@ -14,7 +14,7 @@ export class PrismaPinRepository implements IPinRepository {
         xCoord: pin.xCoord,
         yCoord: pin.yCoord,
         status: pin.status,
-        createdBy: pin.createdBy,
+        ...(pin.createdBy ? { createdBy: pin.createdBy } : {}),
         guestName: pin.guestName,
         createdAt: pin.createdAt,
         updatedAt: pin.updatedAt,

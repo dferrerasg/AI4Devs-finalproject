@@ -11,7 +11,7 @@ export class PrismaCommentRepository implements ICommentRepository {
         id: comment.id,
         pinId: comment.pinId,
         content: comment.content,
-        authorId: comment.authorId,
+        ...(comment.authorId ? { authorId: comment.authorId } : {}),
         guestName: comment.guestName,
         createdAt: comment.createdAt,
         updatedAt: comment.updatedAt,

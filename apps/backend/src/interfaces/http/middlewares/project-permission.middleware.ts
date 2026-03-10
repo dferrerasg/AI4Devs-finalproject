@@ -12,7 +12,8 @@ export const ensureProjectPermission = (allowedRoles: ProjectRole[]) => {
     const guestProjectId = req.user?.projectId;
     const projectId = req.params.projectId || req.body.projectId;
 
-    if (!userId) {
+    // Verificar autenticación (guests tienen userId null pero tienen role y projectId)
+    if (!userId && userRole !== 'GUEST') {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
