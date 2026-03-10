@@ -8,12 +8,26 @@
 
     <!-- Main Stage Area -->
     <div class="flex-1 relative flex flex-col">
-       <!-- Toolbar (Placeholder) -->
+       <!-- Toolbar -->
        <div class="h-12 bg-white border-b border-gray-200 flex items-center px-4 shadow-sm z-10">
           <h2 class="text-sm font-semibold text-gray-800 mr-4">
              {{ currentPlan?.sheetName }} <span class="text-gray-400 font-normal">v{{ currentPlan?.version }}</span>
           </h2>
           <div class="flex-1"></div>
+          
+          <!-- Toggle modo de creación de pines -->
+          <button
+            v-if="hasLayers"
+            class="mr-4 px-3 py-1.5 text-xs font-medium rounded transition-colors"
+            :class="{
+              'bg-primary text-white': isPinMode,
+              'bg-gray-100 text-gray-700 hover:bg-gray-200': !isPinMode,
+            }"
+            @click="togglePinMode"
+          >
+            {{ isPinMode ? '✓ Modo Pin' : '+ Añadir Pin' }}
+          </button>
+
           <div class="text-xs text-gray-500 font-mono">
              Zoom: {{ Math.round(scale * 100) }}%
           </div>
@@ -22,8 +36,12 @@
        <!-- Canvas Container -->
        <div 
          ref="containerRef"
-         class="flex-1 overflow-hidden p-0 relative flex items-center justify-center bg-gray-50 bg-dots z-0 select-none cursor-grab"
-         :class="{ 'cursor-grabbing': isDragging }"
+         class="flex-1 overflow-hidden p-0 relative flex items-center justify-center bg-gray-50 bg-dots z-0 select-none"
+         :class="{ 
+           'cursor-grab': !isDragging && !isPinMode,
+           'cursor-grabbing': isDragging && !isPinMode,
+           'cursor-crosshair': isPinMode,
+         }"
          @wheel.prevent="onWheel"
          @pointerdown="onPointerDown"
          @pointermove="onPointerMove"
@@ -38,35 +56,53 @@
              <p class="mb-2">El plano está vacío.</p>
              <button v-if="!isGuestMode" @click="showUploadModal = true" class="text-primary hover:underline">Sube una capa base</button>
           </div>
-          <div v-else>
-             <!-- Transform Layer -->
-             <div 
-               class="plan-content origin-top-left will-change-transform absolute top-0 left-0"
-               :style="transformStyle"
-             >
-                <!-- Renderizado de capas superpuestas -->
-                <div class="relative w-full h-full"> 
-                  <template v-for="layer in currentPlan?.layers?.filter(l => l.status === 'READY')" :key="layer.id">
-                    <img 
-                      :src="getImageUrl(layer.imageUrl)" 
-                      class="max-w-none pointer-events-none absolute top-0 left-0" 
-                      draggable="false"
-                      @load="onImageLoad" 
-                    />
-                  </template>
-                </div>
-             </div>
+          <div 
+             v-else
+             ref="planContentRef"
+             class="plan-content origin-top-left will-change-transform absolute top-0 left-0"
+             :style="transformStyle"
+             @click="handleCanvasClick"
+          >
+             <!-- Renderizado de capas superpuestas -->
+             <div class="relative" :style="containerDimensions"> 
+                <template v-for="layer in currentPlan?.layers?.filter((l: any) => l.status === 'READY')" :key="layer.id">
+                  <img 
+                    :src="getImageUrl(layer.imageUrl)" 
+                    class="max-w-none pointer-events-none absolute top-0 left-0" 
+                    draggable="false"
+                    @load="onImageLoad" 
+                  />
+                </template>
 
-             <!-- Controls Overlay -->
-             <div class="absolute bottom-6 right-6 z-10 transition-opacity duration-300 hover:opacity-100 opacity-90">
-               <PlanControls 
-                 :zoom-level="scale"
-                 @zoom-in="handleZoomIn"
-                 @zoom-out="handleZoomOut" 
-                 @reset="reset"
-                 @fit="handleFit"
-               />
+                <!-- Renderizado de Pines -->
+                <PinMarker
+                  v-for="pin in visiblePins"
+                  :key="pin.id"
+                  :pin="pin"
+                  @click="handlePinClick"
+                />
              </div>
+          </div>
+
+          <!-- Pin List & Navigation -->
+          <PinList
+            v-if="visiblePins.length > 0"
+            :pins="visiblePins"
+            :selected-pin="selectedPin"
+            :loading="pinsLoading"
+            @select="handlePinClick"
+            @toggle-list="showPinList = !showPinList"
+          />
+
+          <!-- Controls Overlay -->
+          <div class="absolute bottom-6 right-6 z-10 transition-opacity duration-300 hover:opacity-100 opacity-90">
+            <PlanControls 
+              :zoom-level="scale"
+              @zoom-in="handleZoomIn"
+              @zoom-out="handleZoomOut" 
+              @reset="reset"
+              @fit="handleFit"
+            />
           </div>
        </div>
     </div>
@@ -78,6 +114,22 @@
        :plan-id="currentPlan.id"
        @success="onUploadSuccess"
     />
+
+    <CreatePinModal
+      v-model="showCreatePinModal"
+      :coords="pendingPinCoords"
+      :loading="pinsLoading"
+      @submit="handleCreatePin"
+    />
+
+    <CommentsDrawer
+      v-model="showCommentsDrawer"
+      :pin="selectedPin"
+      :loading="pinsLoading"
+      :can-resolve="canResolve"
+      @add-comment="handleAddComment"
+      @toggle-status="handleToggleStatus"
+    />
   </div>
 </template>
 
@@ -85,6 +137,10 @@
 import LayerSidebar from '@/components/layers/LayerSidebar.vue'
 import LayerUploadModal from '@/components/layers/LayerUploadModal.vue'
 import PlanControls from '@/components/plans/PlanControls.vue'
+import PinMarker from '@/components/pins/PinMarker.vue'
+import PinList from '@/components/pins/PinList.vue'
+import CreatePinModal from '@/components/pins/CreatePinModal.vue'
+import CommentsDrawer from '@/components/pins/CommentsDrawer.vue'
 
 const props = defineProps<{
     planId: string
@@ -96,13 +152,37 @@ const { setCurrentPlan, currentPlan, loading, error } = usePlans()
 const showUploadModal = ref(false)
 const config = useRuntimeConfig()
 
+// --- Composable de Pines ---
+const {
+  pins,
+  selectedPin,
+  loading: pinsLoading,
+  isGuest,
+  canResolve,
+  fetchPinsByLayer,
+  createPin,
+  addComment,
+  updatePinStatus,
+  selectPin,
+  deselectPin,
+} = usePins()
+
+// --- Estados de UI para Pines ---
+const isPinMode = ref(false)
+const showCreatePinModal = ref(false)
+const showCommentsDrawer = ref(false)
+const showPinList = ref(false)
+const pendingPinCoords = ref({ x: 0, y: 0 })
+const currentPinIndex = ref(0)
+const planContentRef = ref<HTMLElement | null>(null)
+
 // --- Navigation Logic (US-004) ---
 const containerRef = ref<HTMLElement | null>(null)
-// We track the first image to determine base dimensions for "Fit to Screen"
 const baseImageRef = ref<HTMLImageElement | null>(null)
 
 const { 
   scale, 
+  position,
   transformStyle, 
   isDragging,
   zoomToPoint, 
@@ -114,7 +194,7 @@ const {
 } = usePlanNavigation()
 
 const onWheel = (e: WheelEvent) => {
-  if (!containerRef.value) return
+  if (!containerRef.value || isPinMode.value) return
   const rect = containerRef.value.getBoundingClientRect()
   const point = { x: e.clientX - rect.left, y: e.clientY - rect.top }
   const delta = Math.sign(e.deltaY) 
@@ -123,15 +203,188 @@ const onWheel = (e: WheelEvent) => {
 
 const onPointerDown = (e: PointerEvent) => {
   if (!containerRef.value) return
+  
+  // Modo creación de pin
+  if (isPinMode.value) {
+    handleCanvasClick(e)
+    return
+  }
+  
+  // Modo navegación
   (e.target as Element).setPointerCapture(e.pointerId)
   startDrag({ x: e.clientX, y: e.clientY })
 }
 
-const onPointerMove = (e: PointerEvent) => onDrag({ x: e.clientX, y: e.clientY })
+const onPointerMove = (e: PointerEvent) => {
+  if (!isPinMode.value) {
+    onDrag({ x: e.clientX, y: e.clientY })
+  }
+}
 
 const onPointerUp = (e: PointerEvent) => {
-  if (e.target) (e.target as Element).releasePointerCapture(e.pointerId)
+  if (!isPinMode.value && e.target) {
+    (e.target as Element).releasePointerCapture(e.pointerId)
+  }
   stopDrag()
+}
+
+// --- Lógica de Pines ---
+
+const togglePinMode = () => {
+  isPinMode.value = !isPinMode.value
+  if (isPinMode.value) {
+    // Cerrar drawer si está abierto
+    showCommentsDrawer.value = false
+  }
+}
+
+/**
+ * Convertir coordenadas de click a coordenadas relativas (0-1)
+ */
+const getRelativeCoords = (e: PointerEvent): { x: number; y: number } | null => {
+  if (!planContentRef.value || !baseImageRef.value) return null
+
+  const planRect = planContentRef.value.getBoundingClientRect()
+  const containerRect = containerRef.value!.getBoundingClientRect()
+
+  // Coordenadas del click relativas al contenedor
+  const clickX = e.clientX - containerRect.left
+  const clickY = e.clientY - containerRect.top
+
+  // Coordenadas del plano transformado relativas al contenedor
+  const planX = planRect.left - containerRect.left
+  const planY = planRect.top - containerRect.top
+
+  // Coordenadas relativas al plano (antes del scale)
+  const relativeX = (clickX - planX) / scale.value
+  const relativeY = (clickY - planY) / scale.value
+
+  // Obtener dimensiones de la imagen
+  const imageWidth = baseImageRef.value.naturalWidth
+  const imageHeight = baseImageRef.value.naturalHeight
+
+  // Normalizar a 0-1
+  const normalizedX = relativeX / imageWidth
+  const normalizedY = relativeY / imageHeight
+
+  // Validar que esté dentro del rango
+  if (normalizedX < 0 || normalizedX > 1 || normalizedY < 0 || normalizedY > 1) {
+    return null
+  }
+
+  return { x: normalizedX, y: normalizedY }
+}
+
+const handleCanvasClick = (e: PointerEvent) => {
+  if (!isPinMode.value) return
+
+  const coords = getRelativeCoords(e)
+  if (!coords) return
+
+  // Abrir modal para escribir comentario
+  pendingPinCoords.value = coords
+  showCreatePinModal.value = true
+}
+
+const handleCreatePin = async (content: string) => {
+  if (!currentVisibleLayer.value) return
+
+  try {
+    await createPin(currentVisibleLayer.value.id, {
+      xCoord: pendingPinCoords.value.x,
+      yCoord: pendingPinCoords.value.y,
+      content,
+    })
+
+    showCreatePinModal.value = false
+    isPinMode.value = false
+  } catch (e) {
+    console.error('Error creating pin:', e)
+  }
+}
+
+const handlePinClick = async (pinId: string) => {
+  await selectPin(pinId)
+  showCommentsDrawer.value = true
+  
+  // Actualizar índice actual
+  currentPinIndex.value = visiblePins.value.findIndex(p => p.id === pinId)
+}
+
+const handlePinSelect = async (pinId: string) => {
+  await handlePinClick(pinId)
+}
+
+const handleAddComment = async (content: string) => {
+  if (!selectedPin.value) return
+
+  try {
+    await addComment(selectedPin.value.id, { content })
+  } catch (e) {
+    console.error('Error adding comment:', e)
+  }
+}
+
+const handleToggleStatus = async () => {
+  if (!selectedPin.value) return
+
+  const newStatus = selectedPin.value.status === 'RESOLVED' ? 'OPEN' : 'RESOLVED'
+
+  try {
+    await updatePinStatus(selectedPin.value.id, { status: newStatus })
+  } catch (e) {
+    console.error('Error updating status:', e)
+  }
+}
+
+const handlePinNavigation = (direction: 'prev' | 'next') => {
+  const newIndex = direction === 'prev' 
+    ? Math.max(0, currentPinIndex.value - 1)
+    : Math.min(visiblePins.value.length - 1, currentPinIndex.value + 1)
+
+  currentPinIndex.value = newIndex
+  const pinId = visiblePins.value[newIndex]?.id
+  if (pinId) {
+    handlePinClick(pinId)
+  }
+}
+
+// --- Computed ---
+
+const hasLayers = computed(() => {
+    return currentPlan.value?.layers && currentPlan.value.layers.length > 0
+})
+
+const currentVisibleLayer = computed(() => {
+  // Obtener la primera capa visible (lógica simplificada)
+  return currentPlan.value?.layers?.find(l => l.status === 'READY') || null
+})
+
+const visiblePins = computed(() => {
+  if (!currentVisibleLayer.value) return []
+  return pins.value.filter((pin: any) => pin.layerId === currentVisibleLayer.value!.id)
+})
+
+const containerDimensions = computed(() => {
+  if (!baseImageRef.value) return {}
+  return {
+    width: `${baseImageRef.value.naturalWidth}px`,
+    height: `${baseImageRef.value.naturalHeight}px`,
+  }
+})
+
+// --- Zoom & Pan Helpers ---
+
+const handleZoomIn = () => {
+  if (!containerRef.value) return
+  const center = getCenterPoint()
+  zoomToPoint(-1, center)
+}
+
+const handleZoomOut = () => {
+  if (!containerRef.value) return
+  const center = getCenterPoint()
+  zoomToPoint(1, center)
 }
 
 const getCenterPoint = () => {
@@ -139,9 +392,6 @@ const getCenterPoint = () => {
   const rect = containerRef.value.getBoundingClientRect()
   return { x: rect.width / 2, y: rect.height / 2 }
 }
-
-const handleZoomIn = () => zoomToPoint(-1, getCenterPoint())
-const handleZoomOut = () => zoomToPoint(1, getCenterPoint())
 
 const handleFit = () => {
     // If we have a base image reference, use it
@@ -179,10 +429,6 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
-const hasLayers = computed(() => {
-    return currentPlan.value?.layers && currentPlan.value.layers.length > 0
-})
-
 const getImageUrl = (path?: string) => {
     if (!path) return ''
     if (path.startsWith('http')) return path
@@ -192,9 +438,16 @@ const getImageUrl = (path?: string) => {
     return `${baseUrl}${cleanPath}`
 }
 
-onMounted(() => {
-    setCurrentPlan(props.planId, props.projectId)
+// --- Lifecycle ---
+
+onMounted(async () => {
+    await setCurrentPlan(props.planId, props.projectId)
     window.addEventListener('keydown', handleKeydown)
+    
+    // Cargar pines de la capa visible
+    if (currentVisibleLayer.value) {
+      await fetchPinsByLayer(currentVisibleLayer.value.id)
+    }
 })
 
 onUnmounted(() => {
@@ -205,11 +458,11 @@ const onUploadSuccess = () => {
     // El store ya se actualiza optimisticamente o via re-fetch, 
     // pero podemos forzar refresh si fuera necesario
 }
-</script>
 
-<style scoped>
-.bg-dots {
-  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-</style>
+// Watch para cargar pines cuando cambia la capa visible
+watch(currentVisibleLayer, async (newLayer, oldLayer) => {
+  if (newLayer && newLayer.id !== oldLayer?.id) {
+    await fetchPinsByLayer(newLayer.id)
+  }
+}, { immediate: false })
+</script>

@@ -44,6 +44,7 @@ export class GuestLoginUseCase {
         sub: `guest-${project.id}`,
         role: 'GUEST',
         projectId: project.id,
+        guestName: invitation.email,
         permissions: ['READ_PROJECT', 'READ_PLANS', 'READ_LAYERS'],
       },
       env.JWT_SECRET,
