@@ -605,6 +605,99 @@ paths:
 
   # --- Collaboration Context (Plans) ---
   /projects/{projectId}/plans:
+    get:
+      summary: Listar planos de un proyecto agrupados por hoja
+      description: >
+        Retorna todos los planos del proyecto agrupados por `sheetName`. Cada grupo incluye
+        todas las versiones del plano y sus capas procesadas (`layers`), listas para ser
+        consumidas por el comparador de capas (US-007 / BACK-009).
+      tags: [Plans]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Planos agrupados por hoja, cada plan incluye sus capas procesadas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    sheetName:
+                      type: string
+                      description: Nombre de la hoja/plano
+                    latestVersion:
+                      type: integer
+                      description: Número de la versión más reciente para esta hoja
+                    plans:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          projectId:
+                            type: string
+                            format: uuid
+                          sheetName:
+                            type: string
+                          version:
+                            type: integer
+                          status:
+                            type: string
+                            enum: [DRAFT, ACTIVE, ARCHIVED]
+                          createdAt:
+                            type: string
+                            format: date-time
+                          updatedAt:
+                            type: string
+                            format: date-time
+                          layers:
+                            type: array
+                            description: Capas procesadas del plano (vacío si aún no se han subido capas)
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  format: uuid
+                                planId:
+                                  type: string
+                                  format: uuid
+                                name:
+                                  type: string
+                                imageUrl:
+                                  type: string
+                                  format: uri
+                                  description: URL pública de la imagen procesada (relativa a BASE_URL)
+                                type:
+                                  type: string
+                                  enum: [BASE, OVERLAY]
+                                status:
+                                  type: string
+                                  enum: [PROCESSING, READY, ERROR]
+                                createdAt:
+                                  type: string
+                                  format: date-time
+                                updatedAt:
+                                  type: string
+                                  format: date-time
+        '401':
+          description: No autenticado
+        '403':
+          description: Sin permisos sobre el proyecto
+        '404':
+          description: Proyecto no encontrado
+
     post:
       summary: Subir un nuevo plano (PDF/Image)
       tags: [Plans]

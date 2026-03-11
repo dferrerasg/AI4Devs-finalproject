@@ -162,11 +162,11 @@ describe('Plan Integration', () => {
       // Mock Project existence
        (prisma.project.findUnique as jest.Mock).mockResolvedValue({ id: projectId });
 
-      // Mock Plans
+      // Mock Plans — include layers array as Prisma would return with include: { layers: true }
       const plans = [
-        { id: '1', sheetName: 'Ground', version: 1, projectId, status: 'ARCHIVED', createdAt: new Date(), updatedAt: new Date() },
-        { id: '2', sheetName: 'Ground', version: 2, projectId, status: 'ACTIVE', createdAt: new Date(), updatedAt: new Date() },
-        { id: '3', sheetName: 'Roof', version: 1, projectId, status: 'ACTIVE', createdAt: new Date(), updatedAt: new Date() },
+        { id: '1', sheetName: 'Ground', version: 1, projectId, status: 'ARCHIVED', createdAt: new Date(), updatedAt: new Date(), layers: [] },
+        { id: '2', sheetName: 'Ground', version: 2, projectId, status: 'ACTIVE', createdAt: new Date(), updatedAt: new Date(), layers: [] },
+        { id: '3', sheetName: 'Roof', version: 1, projectId, status: 'ACTIVE', createdAt: new Date(), updatedAt: new Date(), layers: [] },
       ];
       
       (prisma.plan.findMany as jest.Mock).mockResolvedValue(plans);
@@ -192,6 +192,100 @@ describe('Plan Integration', () => {
       expect(roofSheet).toBeDefined();
       expect(roofSheet.plans).toHaveLength(1);
       expect(roofSheet.latestVersion).toBe(1);
+
+      // Each plan must expose a layers array (BACK-009)
+      expect(groundSheet.plans[0]).toHaveProperty('layers');
+      expect(roofSheet.plans[0]).toHaveProperty('layers');
+    });
+
+    it('should include layers with mapped fields in each plan', async () => {
+      // Arrange
+      (prisma.projectMember.findUnique as jest.Mock).mockResolvedValue({
+        projectId,
+        userId,
+        role: 'VIEWER',
+      });
+      (prisma.project.findUnique as jest.Mock).mockResolvedValue({ id: projectId });
+
+      const layerDate = new Date('2026-01-01T00:00:00.000Z');
+      const layer = {
+        id: 'layer-1',
+        planId: 'plan-1',
+        name: 'Ground Base Layer',
+        imageUrl: '/some/path/uploads/plans/ground-base.jpg',
+        type: 'BASE',
+        status: 'ACTIVE', // DB value — should map to READY
+        createdAt: layerDate,
+        updatedAt: layerDate,
+      };
+      const plans = [
+        {
+          id: 'plan-1',
+          sheetName: 'Ground',
+          version: 1,
+          projectId,
+          status: 'ACTIVE',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          layers: [layer],
+        },
+      ];
+
+      (prisma.plan.findMany as jest.Mock).mockResolvedValue(plans);
+
+      // Act
+      const response = await request(app)
+        .get(plansUrl)
+        .set('Authorization', `Bearer ${validToken}`);
+
+      // Assert
+      expect(response.status).toBe(200);
+      const groundSheet = response.body.find((s: any) => s.sheetName === 'Ground');
+      expect(groundSheet.plans[0].layers).toHaveLength(1);
+
+      const returnedLayer = groundSheet.plans[0].layers[0];
+      expect(returnedLayer).toMatchObject({
+        id: 'layer-1',
+        name: 'Ground Base Layer',
+        type: 'BASE',
+        status: 'READY',                             // ACTIVE → READY mapping
+        imageUrl: expect.stringContaining('/uploads/plans/ground-base.jpg'),
+      });
+    });
+
+    it('should return an empty layers array for plans with no layers', async () => {
+      // Arrange
+      (prisma.projectMember.findUnique as jest.Mock).mockResolvedValue({
+        projectId,
+        userId,
+        role: 'VIEWER',
+      });
+      (prisma.project.findUnique as jest.Mock).mockResolvedValue({ id: projectId });
+
+      const plans = [
+        {
+          id: 'plan-1',
+          sheetName: 'Roof',
+          version: 1,
+          projectId,
+          status: 'DRAFT',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          layers: [], // No layers yet
+        },
+      ];
+
+      (prisma.plan.findMany as jest.Mock).mockResolvedValue(plans);
+
+      // Act
+      const response = await request(app)
+        .get(plansUrl)
+        .set('Authorization', `Bearer ${validToken}`);
+
+      // Assert
+      expect(response.status).toBe(200);
+      const roofSheet = response.body.find((s: any) => s.sheetName === 'Roof');
+      expect(roofSheet.plans[0].layers).toEqual([]);
     });
   });
 });
