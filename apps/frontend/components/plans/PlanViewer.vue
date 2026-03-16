@@ -64,17 +64,39 @@
              @click="handleCanvasClick"
           >
              <!-- Renderizado de capas superpuestas -->
-             <div class="relative" :style="containerDimensions"> 
-                <template v-for="layer in currentPlan?.layers?.filter((l: any) => l.status === 'READY')" :key="layer.id">
-                  <img 
-                    :src="getImageUrl(layer.imageUrl)" 
-                    class="max-w-none pointer-events-none absolute top-0 left-0" 
+             <div class="relative" :style="containerDimensions">
+
+                <!-- Modo Comparador: imagen base fija + imagen propuesta con opacidad dinámica -->
+                <template v-if="comparatorEnabled">
+                  <img
+                    v-if="baseImageUrl"
+                    :src="baseImageUrl"
+                    class="max-w-none pointer-events-none absolute top-0 left-0"
                     draggable="false"
-                    @load="onImageLoad" 
+                    @load="onImageLoad"
+                  />
+                  <img
+                    v-if="proposalImageUrl"
+                    :src="proposalImageUrl"
+                    class="max-w-none pointer-events-none absolute top-0 left-0 z-10 transition-opacity duration-75"
+                    draggable="false"
+                    :style="{ opacity }"
                   />
                 </template>
 
-                <!-- Renderizado de Pines -->
+                <!-- Modo Normal (1 versión): renderiza todas las capas READY -->
+                <template v-else>
+                  <template v-for="layer in currentPlan?.layers?.filter((l: any) => l.status === 'READY')" :key="layer.id">
+                    <img
+                      :src="getImageUrl(layer.imageUrl)"
+                      class="max-w-none pointer-events-none absolute top-0 left-0"
+                      draggable="false"
+                      @load="onImageLoad"
+                    />
+                  </template>
+                </template>
+
+                <!-- Renderizado de Pines (siempre visible, z-20 garantizado en PinMarker) -->
                 <PinMarker
                   v-for="pin in visiblePins"
                   :key="pin.id"
@@ -102,6 +124,24 @@
               @zoom-out="handleZoomOut" 
               @reset="reset"
               @fit="handleFit"
+            />
+          </div>
+
+          <!-- Comparador de Capas — panel flotante centrado inferior (US-007) -->
+          <!-- stop propagation evita que los eventos del slider activen el drag del canvas -->
+          <div
+            class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10"
+            @pointerdown.stop
+            @pointermove.stop
+            @pointerup.stop
+          >
+            <LayerComparatorControls
+              v-if="comparatorEnabled"
+              v-model:opacity="opacity"
+              v-model:base-plan-id="basePlanId"
+              v-model:proposal-plan-id="proposalPlanId"
+              :plans="comparatorPlans"
+              @blink="toggleBlink"
             />
           </div>
        </div>
@@ -136,6 +176,7 @@
 <script setup lang="ts">
 import LayerSidebar from '@/components/layers/LayerSidebar.vue'
 import LayerUploadModal from '@/components/layers/LayerUploadModal.vue'
+import LayerComparatorControls from '@/components/layers/LayerComparatorControls.vue'
 import PlanControls from '@/components/plans/PlanControls.vue'
 import PinMarker from '@/components/pins/PinMarker.vue'
 import PinList from '@/components/pins/PinList.vue'
@@ -148,8 +189,21 @@ const props = defineProps<{
     isGuestMode?: boolean
 }>()
 
-const { setCurrentPlan, currentPlan, loading, error } = usePlans()
+const { setCurrentPlan, currentPlan, loading, error, groups, fetchProjectPlans } = usePlans()
 const showUploadModal = ref(false)
+
+// --- Composable Comparador de Capas (US-007) ---
+const {
+  opacity,
+  basePlanId,
+  proposalPlanId,
+  comparatorPlans,
+  comparatorEnabled,
+  baseImageUrl,
+  proposalImageUrl,
+  initComparator,
+  toggleBlink,
+} = useLayerComparator()
 const config = useRuntimeConfig()
 
 // --- Composable de Pines ---
@@ -443,7 +497,18 @@ const getImageUrl = (path?: string) => {
 onMounted(async () => {
     await setCurrentPlan(props.planId, props.projectId)
     window.addEventListener('keydown', handleKeydown)
-    
+
+    // Cargar versiones del mismo sheet para el comparador si el store no las tiene aún.
+    // En modo guest se omite porque el plan de invitado no tiene historial de versiones accesible.
+    if (!groups.value.length && props.projectId && !props.isGuestMode) {
+      await fetchProjectPlans(props.projectId)
+    }
+
+    // Inicializar comparador con selección por defecto
+    if (currentPlan.value) {
+      initComparator(currentPlan.value)
+    }
+
     // Cargar pines de la capa visible
     if (currentVisibleLayer.value) {
       await fetchPinsByLayer(currentVisibleLayer.value.id)
@@ -464,5 +529,10 @@ watch(currentVisibleLayer, async (newLayer, oldLayer) => {
   if (newLayer && newLayer.id !== oldLayer?.id) {
     await fetchPinsByLayer(newLayer.id)
   }
+}, { immediate: false })
+
+// Re-inicializar comparador cuando cambia el plan activo (ej: navegar entre versiones)
+watch(currentPlan, (newPlan) => {
+  if (newPlan) initComparator(newPlan)
 }, { immediate: false })
 </script>
