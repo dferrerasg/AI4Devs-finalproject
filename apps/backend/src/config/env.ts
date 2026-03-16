@@ -5,6 +5,7 @@ dotenv.config();
 
 const envSchema = z.object({
   PORT: z.string().default('4000'),
+  BASE_URL: z.string().default('http://localhost:4000'),
   DATABASE_URL: z.string().url(),
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.string().default('6379'),
