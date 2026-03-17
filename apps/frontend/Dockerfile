@@ -5,8 +5,11 @@
 
 # Stage 1: Builder
 # node:20-slim (Debian/glibc) es necesario porque oxc-parser (dependencia interna de Nuxt)
-# requiere bindings nativos glibc. Alpine usa musl y el package-lock.json generado en
-# macOS no incluye el binding musl, lo que causa un error en `npm ci` con Alpine.
+# requiere bindings nativos glibc.
+# Usamos `npm install` en lugar de `npm ci` porque el package-lock.json fue generado en
+# macOS (darwin) y no incluye el optional binding linux-x64-gnu de oxc-parser.
+# `npm ci` instala estrictamente lo del lockfile; `npm install` resuelve los optional deps
+# para la plataforma actual del contenedor (Linux x64 glibc).
 FROM node:20-slim AS builder
 
 WORKDIR /app
@@ -15,8 +18,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 COPY apps/frontend/package.json ./apps/frontend/
 
-# Instalar dependencias del workspace desde la raíz
-RUN npm ci
+# npm install (no ci) para resolver optional platform deps de oxc-parser en Linux
+RUN npm install --prefer-offline
 
 # Copiar código fuente del frontend
 COPY apps/frontend ./apps/frontend
