@@ -27,9 +27,13 @@ COPY apps/worker ./apps/worker
 # Compilar @trace/core primero
 RUN npm run build --workspace=packages/core
 
+# Prisma generate desde la raíz del monorepo: así Prisma encuentra el package.json
+# en /app y no intenta un auto-install al no encontrarlo en /app/apps
+WORKDIR /app
+RUN npx prisma generate --schema=apps/backend/prisma/schema.prisma
+
 # Compilar worker
 WORKDIR /app/apps/worker
-RUN npx prisma generate --schema=../backend/prisma/schema.prisma
 RUN npm run build
 
 # Stage 2: Runner
