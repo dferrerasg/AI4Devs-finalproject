@@ -4,7 +4,10 @@
 # =============================================================
 
 # Stage 1: Builder
-FROM node:20-alpine AS builder
+# node:20-slim (Debian/glibc) es necesario porque oxc-parser (dependencia interna de Nuxt)
+# requiere bindings nativos glibc. Alpine usa musl y el package-lock.json generado en
+# macOS no incluye el binding musl, lo que causa un error en `npm ci` con Alpine.
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
