@@ -1,22 +1,41 @@
+# =============================================================
+# Build context: MONOREPO ROOT (not apps/worker)
+# docker-compose apunta context: . dockerfile: apps/worker/Dockerfile
+# =============================================================
+
 # Stage 1: Builder
 FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Install openssl for prisma
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
+# Copiar manifests del workspace para aprovechar cache de capas
 COPY package.json package-lock.json* ./
+COPY packages/core/package.json ./packages/core/
+COPY apps/worker/package.json ./apps/worker/
+# Schema de prisma del backend (el worker lo reutiliza)
+COPY apps/backend/prisma ./apps/backend/prisma
+
+# Instalar todas las dependencias del workspace desde la raíz
 RUN npm ci
 
-COPY . .
-RUN npx prisma generate
+# Copiar código fuente
+COPY packages/core ./packages/core
+COPY apps/worker ./apps/worker
+
+# Compilar @trace/core primero
+RUN npm run build --workspace=packages/core
+
+# Compilar worker
+WORKDIR /app/apps/worker
+RUN npx prisma generate --schema=../backend/prisma/schema.prisma
 RUN npm run build
 
 # Stage 2: Runner
 FROM node:20-slim AS runner
 
-# Install system dependencies for image/pdf processing
+# Dependencias de sistema para procesamiento de imágenes y PDFs
 RUN apt-get update && apt-get install -y \
     ghostscript \
     graphicsmagick \
@@ -25,9 +44,14 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# node_modules del workspace (Docker desreferencia el symlink @trace/core automáticamente)
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
+
+# Artefactos del worker
+COPY --from=builder /app/apps/worker/package.json ./apps/worker/
+COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
+
+WORKDIR /app/apps/worker
 
 CMD ["node", "dist/index.js"]

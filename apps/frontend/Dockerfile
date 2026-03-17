@@ -1,20 +1,33 @@
+# =============================================================
+# Build context: MONOREPO ROOT (not apps/frontend)
+# docker-compose apunta context: . dockerfile: apps/frontend/Dockerfile
+# =============================================================
+
 # Stage 1: Builder
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Copiar manifests del workspace para aprovechar cache de capas
 COPY package.json package-lock.json* ./
+COPY apps/frontend/package.json ./apps/frontend/
+
+# Instalar dependencias del workspace desde la raíz
 RUN npm ci
 
-COPY . .
+# Copiar código fuente del frontend
+COPY apps/frontend ./apps/frontend
+
+# Compilar Nuxt (los env públicos se inyectan en runtime vía runtimeConfig)
+WORKDIR /app/apps/frontend
 RUN npm run build
 
 # Stage 2: Runner
 FROM node:20-alpine AS runner
 
-WORKDIR /app
+WORKDIR /app/apps/frontend
 
-COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/apps/frontend/.output ./.output
 
 ENV PORT=3000
 ENV HOST=0.0.0.0
