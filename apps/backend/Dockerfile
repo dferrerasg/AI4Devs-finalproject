@@ -27,7 +27,7 @@ RUN npm run build --workspace=packages/core
 
 # Compilar backend
 WORKDIR /app/apps/backend
-RUN npx prisma generate
+RUN ./../../node_modules/.bin/prisma generate
 RUN npm run build
 
 # Stage 2: Runner
