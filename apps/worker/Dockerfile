@@ -14,7 +14,9 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 COPY packages/core/package.json ./packages/core/
 COPY apps/worker/package.json ./apps/worker/
-# Schema de prisma del backend (el worker lo reutiliza)
+# Schema + package.json del backend (Prisma sube desde el schema buscando un package.json;
+# sin él llegaría a /app/apps sin encontrar nada y haría un auto-install que falla)
+COPY apps/backend/package.json ./apps/backend/
 COPY apps/backend/prisma ./apps/backend/prisma
 
 # Instalar todas las dependencias del workspace desde la raíz
