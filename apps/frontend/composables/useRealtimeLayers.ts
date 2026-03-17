@@ -19,7 +19,7 @@ export function useRealtimeLayers() {
       // Ensure we have a full URL for the image to avoid port 3000 issues
       let fullImageUrl = imageUrl;
       if (imageUrl && !imageUrl.startsWith('http')) {
-         const baseUrl = (config.public.socketUrl || 'http://localhost:4000').replace(/\/$/, '');
+         const baseUrl = (config.public.socketUrl as string).replace(/\/$/, '');
          const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
          fullImageUrl = `${baseUrl}${cleanPath}`;
       }

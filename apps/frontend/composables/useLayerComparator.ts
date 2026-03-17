@@ -19,7 +19,7 @@ export function useLayerComparator() {
   const _resolveUrl = (path?: string): string => {
     if (!path) return ''
     if (path.startsWith('http')) return path
-    const base = ((config.public.socketUrl as string) || 'http://localhost:4000').replace(/\/$/, '')
+    const base = (config.public.socketUrl as string).replace(/\/$/, '')
     const clean = path.startsWith('/') ? path : `/${path}`
     return `${base}${clean}`
   }

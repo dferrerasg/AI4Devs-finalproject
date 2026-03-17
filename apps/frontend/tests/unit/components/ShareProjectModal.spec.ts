@@ -33,7 +33,7 @@ global.$fetch = vi.fn();
 vi.mock('#app', () => ({
   useRuntimeConfig: () => ({
     public: {
-      apiBase: 'http://localhost:4000/api/v1'
+      apiBase: 'http://localhost:4000/api'
     }
   })
 }));

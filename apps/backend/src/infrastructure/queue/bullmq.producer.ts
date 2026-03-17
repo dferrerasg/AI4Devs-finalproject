@@ -1,10 +1,11 @@
 import { Queue } from 'bullmq';
 import { IJobQueue, LayerProcessingJob } from '@/domain/layers/job-queue.interface';
+import { env } from '@/config/env';
 
 // Warning: In production, reuse the Redis connection
 const connection = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
+  host: env.REDIS_HOST,
+  port: Number(env.REDIS_PORT),
 };
 
 export class BullMQProducer implements IJobQueue {

@@ -214,6 +214,56 @@ Además, el documento incluye las especificaciones tecnológicas detalladas (Pri
 
 **Prompt 1:**
 
+Model: GitHub Copilot (Claude Sonnet 4.6)
+```markdown
+ROL
+Eres un experto en arquitectura AWS para proyectos fullstack con node, prisma, redis y nuxt.
+
+TAREA
+Quiero desplegar este proyecto en AWS de forma facil y reduciendo el coste al máximo, como MVP.
+
+Quiero que me des un plan con una guia paso a paso para provisionar lo necesario en AWS para este proyecto de forma sencilla.
+
+Hazme todas las preguntas que necesites
+```
+
+**Resumen de la conversación:**
+
+El asistente analizó el stack completo del proyecto (Nuxt 3 SSR, Express + Socket.io, BullMQ Worker, PostgreSQL, Redis y MinIO) y planteó preguntas clave antes de proponer la arquitectura:
+- **Free Tier:** ¿Activo? → No.
+- **Presupuesto:** Lo más barato posible.
+- **Dominio:** No disponible de momento.
+- **Usuarios simultáneos:** Pocos (< 20).
+- **CI/CD:** GitHub Actions, pero se definirá después.
+- **Downtime en updates:** Aceptable.
+- **Frontend:** SSR obligatorio (Socket.io + JWT en store).
+- **Entornos:** Solo producción para el MVP.
+
+**Arquitectura elegida: Opción A — Todo en una EC2 + S3**
+
+```
+EC2 t3.small (~$15/mes)
+ ├── Nginx (reverse proxy, WebSocket upgrade)
+ ├── Frontend Nuxt SSR  :3000
+ ├── Backend Express    :4000  (Socket.io)
+ ├── Worker BullMQ
+ ├── PostgreSQL (Docker volume → EBS)
+ └── Redis (Docker volume → EBS)
+
+S3 → Archivos de planos (reemplaza MinIO, ~$1-2/mes)
+Elastic IP → IP pública fija
+
+TOTAL ESTIMADO: ~$17-18/mes
+```
+
+**Entregables generados:**
+
+1. **`docker-compose.prod.yml`:** Orquestación de producción sin MinIO, con healthchecks en Postgres y Redis, y todas las variables de entorno inyectadas.
+2. **`.env.production`:** Plantilla documentada con todos los secretos necesarios (segura para subir al repo al no contener valores reales).
+3. **`deploy.sh`:** Script de despliegue que ejecuta `git pull`, `docker compose build`, migraciones de Prisma y `docker compose up -d`.
+4. **Fix en `s3.ts`:** Detección automática de MinIO vs S3 nativo para activar `forcePathStyle` solo en entorno local.
+5. **Guía paso a paso** dividida en 7 fases (IAM, S3, EC2, configuración servidor, código, Nginx, primer despliegue) con estimación de tiempo total de ~1h 45min y tabla de costes desglosada.
+
 **Prompt 2:**
 
 **Prompt 3:**

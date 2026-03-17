@@ -486,8 +486,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 const getImageUrl = (path?: string) => {
     if (!path) return ''
     if (path.startsWith('http')) return path
-    const configuredUrl = config.public.socketUrl || 'http://localhost:4000'
-    const baseUrl = configuredUrl.replace(/\/$/, '')
+    const baseUrl = (config.public.socketUrl as string).replace(/\/$/, '')
     const cleanPath = path.startsWith('/') ? path : `/${path}`
     return `${baseUrl}${cleanPath}`
 }

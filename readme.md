@@ -125,7 +125,64 @@ El proyecto se organiza mediante **npm workspaces**, permitiendo gestionar múlt
 
 ### **2.4. Infraestructura y despliegue**
 
-> Detalla la infraestructura del proyecto, incluyendo un diagrama en el formato que creas conveniente, y explica el proceso de despliegue que se sigue
+El despliegue del MVP se realiza sobre **AWS** con el objetivo de minimizar costes (~$17-18/mes), concentrando todos los servicios de aplicación en una única instancia EC2 orquestada con Docker Compose.
+
+```mermaid
+graph TB
+    subgraph Internet["🌐 Internet"]
+        User["👤 Usuario / Cliente"]
+    end
+
+    subgraph AWS["☁️ AWS Cloud (eu-west-1)"]
+
+        ElasticIP["🔒 Elastic IP\n(IP fija pública)"]
+
+        subgraph EC2["🖥️ EC2 t3.small · 2 vCPU · 2 GB RAM"]
+
+            Nginx["⚙️ Nginx\nReverse Proxy + WebSocket Upgrade\n:80 → :3000 / :4000"]
+
+            subgraph Docker["🐳 Docker Compose (trace_net)"]
+                Frontend["Frontend\nNuxt 3 SSR\n:3000"]
+                Backend["Backend\nExpress + Socket.io\n:4000"]
+                Worker["Worker\nBullMQ + Sharp\n+ Ghostscript"]
+                Postgres[("PostgreSQL 15\n(Docker Volume)")]
+                Redis[("Redis 7\n(Docker Volume)")]
+            end
+
+            subgraph EBS["💾 EBS 20GB gp3"]
+                PGVol["postgres_data"]
+                RedisVol["redis_data"]
+            end
+        end
+
+        S3[("🪣 S3 Bucket\ntrace-plans-prod\nPlanos · Imágenes · PDFs")]
+
+    end
+
+    User -->|"HTTPS :80"| ElasticIP
+    ElasticIP --> Nginx
+    Nginx -->|"/ → :3000"| Frontend
+    Nginx -->|"/api/ → :4000"| Backend
+    Nginx -->|"/socket.io/ → :4000\n(WebSocket Upgrade)"| Backend
+
+    Frontend -->|"API calls"| Backend
+    Backend -->|"Encola Job"| Redis
+    Redis -->|"Consume Job"| Worker
+    Backend --- Postgres
+    Worker --- Postgres
+    Worker -->|"PutObject\n(AWS SDK)"| S3
+    Backend -->|"GetObject URL"| S3
+
+    Postgres --- PGVol
+    Redis --- RedisVol
+```
+
+**Proceso de despliegue:**
+
+1. El desarrollador hace `git push origin main`
+2. En el servidor EC2 (vía SSH): `./deploy.sh`
+3. El script ejecuta `git pull` → `docker compose build` → `prisma migrate deploy` → `docker compose up -d`
+4. Nginx sirve el tráfico sin interrupción durante el restart de contenedores
 
 ### **2.5. Seguridad**
 
