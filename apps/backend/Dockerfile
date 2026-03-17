@@ -25,10 +25,10 @@ COPY apps/backend ./apps/backend
 # Compilar @trace/core primero (el backend depende de él)
 RUN npm run build --workspace=packages/core
 
-# Compilar backend
-WORKDIR /app/apps/backend
-RUN ./../../node_modules/.bin/prisma generate
-RUN npm run build
+# Prisma generate + compilar backend: npm run --workspace configura el PATH
+# correctamente incluyendo node_modules/.bin del workspace
+RUN npm run prisma:generate --workspace=apps/backend
+RUN npm run build --workspace=apps/backend
 
 # Stage 2: Runner
 FROM node:20-alpine AS runner
