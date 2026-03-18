@@ -15,9 +15,17 @@ git pull origin main
 docker compose -f docker-compose.prod.yml build --parallel
 
 # 3. Aplicar migraciones de base de datos ANTES de reiniciar el backend
+# Levantamos solo postgres y redis primero para que la BD esté disponible
+echo "📦 Levantando base de datos..."
+docker compose -f docker-compose.prod.yml up -d postgres redis
+echo "⏳ Esperando que postgres esté listo..."
+sleep 5
+
 echo "📦 Aplicando migraciones de Prisma..."
-docker compose -f docker-compose.prod.yml run --rm backend \
-  npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml run --rm \
+  -e DATABASE_URL="${DATABASE_URL}" \
+  backend \
+  node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
 
 # 4. Reiniciar servicios con zero-downtime básico
 # (levanta los nuevos contenedores, espera que estén healthy, para los viejos)
