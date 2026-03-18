@@ -52,6 +52,6 @@ WORKDIR /app/apps/backend
 
 EXPOSE 4000
 
-# tsconfig-paths/register resuelve los alias TypeScript (@/ -> src/) en runtime.
-# El módulo está hoisted en /app/node_modules (devDependency del workspace).
-CMD ["node", "-r", "tsconfig-paths/register", "dist/server.js"]
+# tsc-alias ya resolvió los alias @/ -> rutas relativas en el build.
+# El runner no necesita tsconfig-paths ni ningún módulo extra.
+CMD ["node", "dist/server.js"]

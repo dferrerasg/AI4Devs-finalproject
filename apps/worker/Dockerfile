@@ -60,6 +60,6 @@ COPY --from=builder /app/apps/worker/tsconfig.json ./apps/worker/
 
 WORKDIR /app/apps/worker
 
-# tsconfig-paths/register resuelve los alias TypeScript (@/ -> src/) en runtime.
-# El módulo está hoisted en /app/node_modules (devDependency del workspace).
-CMD ["node", "-r", "tsconfig-paths/register", "dist/index.js"]
+# tsc-alias ya resolvió los alias @/ -> rutas relativas en el build.
+# El runner no necesita tsconfig-paths ni ningún módulo extra.
+CMD ["node", "dist/index.js"]
