@@ -14,20 +14,22 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Copiar manifests del workspace para aprovechar cache de capas
-COPY package.json package-lock.json* ./
+# NO copiamos el lockfile: fue generado en macOS y tiene el binding darwin de oxc-parser
+# pero no el linux-x64-gnu. Con lockfile presente, npm (bug #4828) no resuelve
+# los optional deps para la plataforma actual aunque uses npm install.
+# Sin lockfile, npm resuelve desde el registry e instala el binding correcto para Linux.
+COPY package.json ./
 COPY apps/frontend/package.json ./apps/frontend/
 
-# npm install (no ci) para resolver optional platform deps de oxc-parser en Linux
-    # El lockfile fue generado en macOS: tiene el binding darwin pero no el linux-x64-gnu.
-    # npm tiene un bug conocido (https://github.com/npm/cli/issues/4828) donde los optional
-    # deps de plataforma no se instalan correctamente si existe un lockfile cross-platform.
-    # Eliminamos el lockfile para que npm resuelva los bindings para Linux desde cero.
-RUN rm -f package-lock.json && npm install
+# --ignore-scripts evita que el postinstall "nuxt prepare" se ejecute durante la
+# instalación (fallaría porque oxc-parser aún no tiene su binding disponible en PATH).
+# nuxt build genera los tipos internamente, así que nuxt prepare no es necesario aquí.
+RUN npm install --ignore-scripts
+
 # Copiar código fuente del frontend
 COPY apps/frontend ./apps/frontend
 
-# Compilar Nuxt (los env públicos se inyectan en runtime vía runtimeConfig)
+# nuxt build incluye la generación de tipos internamente
 WORKDIR /app/apps/frontend
 RUN npm run build
 
