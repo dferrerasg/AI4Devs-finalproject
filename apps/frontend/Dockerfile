@@ -19,8 +19,11 @@ COPY package.json package-lock.json* ./
 COPY apps/frontend/package.json ./apps/frontend/
 
 # npm install (no ci) para resolver optional platform deps de oxc-parser en Linux
-RUN npm install --prefer-offline
-
+    # El lockfile fue generado en macOS: tiene el binding darwin pero no el linux-x64-gnu.
+    # npm tiene un bug conocido (https://github.com/npm/cli/issues/4828) donde los optional
+    # deps de plataforma no se instalan correctamente si existe un lockfile cross-platform.
+    # Eliminamos el lockfile para que npm resuelva los bindings para Linux desde cero.
+RUN rm -f package-lock.json && npm install
 # Copiar código fuente del frontend
 COPY apps/frontend ./apps/frontend
 
