@@ -55,7 +55,11 @@ COPY --from=builder /app/node_modules ./node_modules
 # Artefactos del worker
 COPY --from=builder /app/apps/worker/package.json ./apps/worker/
 COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
+# tsconfig.json es necesario para que tsconfig-paths/register resuelva los alias @/ en runtime
+COPY --from=builder /app/apps/worker/tsconfig.json ./apps/worker/
 
 WORKDIR /app/apps/worker
 
-CMD ["node", "dist/index.js"]
+# tsconfig-paths/register resuelve los alias TypeScript (@/ -> src/) en runtime.
+# El módulo está hoisted en /app/node_modules (devDependency del workspace).
+CMD ["node", "-r", "tsconfig-paths/register", "dist/index.js"]

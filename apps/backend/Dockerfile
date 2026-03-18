@@ -45,9 +45,13 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/backend/package.json ./apps/backend/
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
+# tsconfig.json es necesario para que tsconfig-paths/register resuelva los alias @/ en runtime
+COPY --from=builder /app/apps/backend/tsconfig.json ./apps/backend/
 
 WORKDIR /app/apps/backend
 
 EXPOSE 4000
 
-CMD ["node", "dist/server.js"]
+# tsconfig-paths/register resuelve los alias TypeScript (@/ -> src/) en runtime.
+# El módulo está hoisted en /app/node_modules (devDependency del workspace).
+CMD ["node", "-r", "tsconfig-paths/register", "dist/server.js"]
