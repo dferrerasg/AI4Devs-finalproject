@@ -48,15 +48,19 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# node_modules del workspace (Docker desreferencia el symlink @trace/core automáticamente)
+# En npm workspaces no todos los paquetes se hoistan a /app/node_modules:
+# algunos quedan en /app/apps/worker/node_modules. Copiamos ambos.
+# Tambien copiamos packages/core/dist porque @trace/core en node_modules
+# es un symlink que apuntaria a una ruta inexistente en el runner.
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/core/package.json ./packages/core/
+COPY --from=builder /app/packages/core/dist ./packages/core/dist
 
-# Artefactos del worker
+# Artefactos del worker + node_modules propios del workspace
 COPY --from=builder /app/apps/worker/package.json ./apps/worker/
+COPY --from=builder /app/apps/worker/node_modules ./apps/worker/node_modules
 COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
-# tsconfig.json es necesario para que tsconfig-paths/register resuelva los alias @/ en runtime
-COPY --from=builder /app/apps/worker/tsconfig.json ./apps/worker/
 
 WORKDIR /app/apps/worker
 

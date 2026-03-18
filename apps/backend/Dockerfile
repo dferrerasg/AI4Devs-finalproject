@@ -37,16 +37,20 @@ WORKDIR /app
 
 RUN apk add --no-cache openssl
 
-# node_modules del workspace (Docker desreferencia el symlink @trace/core automáticamente)
+# En npm workspaces no todos los paquetes se hoistan a /app/node_modules:
+# algunos quedan en /app/apps/backend/node_modules. Copiamos ambos.
+# Tambien copiamos packages/core/dist porque @trace/core en node_modules
+# es un symlink que apuntaria a una ruta inexistente en el runner.
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/core/package.json ./packages/core/
+COPY --from=builder /app/packages/core/dist ./packages/core/dist
 
-# Artefactos del backend
+# Artefactos del backend + node_modules propios del workspace
 COPY --from=builder /app/apps/backend/package.json ./apps/backend/
+COPY --from=builder /app/apps/backend/node_modules ./apps/backend/node_modules
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
-# tsconfig.json es necesario para que tsconfig-paths/register resuelva los alias @/ en runtime
-COPY --from=builder /app/apps/backend/tsconfig.json ./apps/backend/
 
 WORKDIR /app/apps/backend
 
