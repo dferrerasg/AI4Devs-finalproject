@@ -62,6 +62,12 @@ COPY --from=builder /app/apps/worker/package.json ./apps/worker/
 COPY --from=builder /app/apps/worker/node_modules ./apps/worker/node_modules
 COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
 
+# CRÍTICO: prisma generate escribe el cliente en apps/backend/node_modules/.prisma
+# (busca el package.json más cercano al schema, que está en apps/backend/).
+# El worker importa @prisma/client que busca .prisma/client relativo a su propio
+# node_modules → copiamos el cliente generado al lugar donde el worker lo espera.
+COPY --from=builder /app/apps/backend/node_modules/.prisma ./apps/worker/node_modules/.prisma
+
 WORKDIR /app/apps/worker
 
 # tsc-alias ya resolvió los alias @/ -> rutas relativas en el build.
