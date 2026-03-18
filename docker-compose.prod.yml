@@ -47,8 +47,9 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN}
       BASE_URL: ${BASE_URL}
     volumes:
-      # Volumen compartido: backend escribe los uploads, worker los lee para procesarlos
-      - uploads_data:/app/apps/backend/uploads
+      # Bind mount a ruta conocida del host para que Nginx pueda servir
+      # los archivos directamente sin pasar por el backend (más rápido, sin timeouts)
+      - /opt/trace/uploads:/app/apps/backend/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,8 +95,8 @@ services:
       S3_REGION: ${S3_REGION}
       CONCURRENCY: 3
     volumes:
-      # Mismo volumen que el backend: el worker lee los ficheros subidos para procesarlos
-      - uploads_data:/app/apps/backend/uploads
+      # Mismo bind mount que el backend para acceder a los uploads subidos
+      - /opt/trace/uploads:/app/apps/backend/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,4 +112,3 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  uploads_data:

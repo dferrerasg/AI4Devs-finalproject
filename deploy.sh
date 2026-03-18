@@ -4,6 +4,22 @@
 # Uso: ./deploy.sh
 # Ejecutar en el servidor EC2 dentro de /opt/trace
 # =============================================================
+# NGINX CONFIG REQUERIDA en /etc/nginx/sites-available/trace:
+#
+#   location /uploads/ {
+#       proxy_pass http://localhost:4000;
+#       proxy_http_version 1.1;
+#       proxy_set_header Host $host;
+#       add_header Cache-Control "public, max-age=86400";
+#   }
+#   location /api/ {
+#       proxy_pass http://localhost:4000;
+#       ...
+#   }
+#   location /socket.io/ { ... }
+#   location / { proxy_pass http://localhost:3000; ... }
+#
+# =============================================================
 set -e
 
 echo "🚀 Iniciando despliegue de TRACÉ..."
