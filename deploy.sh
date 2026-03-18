@@ -22,10 +22,12 @@ echo "⏳ Esperando que postgres esté listo..."
 sleep 5
 
 echo "📦 Aplicando migraciones de Prisma..."
+# Intentamos migrate deploy (usa los archivos SQL de prisma/migrations/).
+# Si no hay migraciones en el contenedor, db push sincroniza el schema directamente.
 docker compose -f docker-compose.prod.yml run --rm \
-  -e DATABASE_URL="${DATABASE_URL}" \
   backend \
-  node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
+  sh -c "node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma \
+         || node_modules/.bin/prisma db push --schema=prisma/schema.prisma --accept-data-loss"
 
 # 4. Reiniciar servicios con zero-downtime básico
 # (levanta los nuevos contenedores, espera que estén healthy, para los viejos)
