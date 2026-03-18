@@ -22,6 +22,11 @@ COPY apps/backend/prisma ./apps/backend/prisma
 # Instalar todas las dependencias del workspace desde la raíz
 RUN npm ci
 
+# sharp tiene prebuilt binaries por plataforma. El lockfile generado en macOS
+# instala el binary darwin. Forzamos el rebuild para linux-x64 en el builder
+# (que ya es Linux) para que se descargue/compile el binary correcto.
+RUN npm rebuild sharp --platform=linux --arch=x64
+
 # Copiar código fuente
 COPY packages/core ./packages/core
 COPY apps/worker ./apps/worker
