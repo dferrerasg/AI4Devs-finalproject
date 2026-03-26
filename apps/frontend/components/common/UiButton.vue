@@ -4,6 +4,7 @@ interface Props {
   type?: 'button' | 'submit' | 'reset';
   loading?: boolean;
   disabled?: boolean;
+  testId?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -18,6 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
   <button
     :type="type"
     :disabled="disabled || loading"
+    :data-testid="testId"
     :class="[
       'relative flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed',
       variant === 'primary' && 'bg-primary text-white hover:bg-blue-600 focus:ring-primary',

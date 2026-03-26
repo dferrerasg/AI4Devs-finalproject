@@ -5,8 +5,8 @@ import * as z from 'zod';
 import { useAuth } from '~/composables/useAuth';
 
 definePageMeta({
-  layout: 'auth',
-  middleware: ['guest'] // We will create this middleware next
+  layout: false, // <NuxtLayout> is used explicitly in the template below
+  middleware: ['guest']
 });
 
 const { login, loading, error } = useAuth();
@@ -14,7 +14,7 @@ const { login, loading, error } = useAuth();
 const validationSchema = toTypedSchema(
   z.object({
     email: z.string().min(1, 'Email is required').email('Invalid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
   })
 );
 
@@ -38,9 +38,9 @@ const onSubmit = handleSubmit(async (values) => {
         </NuxtLink>
       </template>
 
-      <form class="space-y-6" @submit="onSubmit">
+      <form data-testid="login-form" class="space-y-6" @submit.prevent="onSubmit">
         <!-- Global Error Alert -->
-        <div v-if="error" class="p-4 rounded-md bg-red-50 border border-red-200">
+        <div v-if="error" data-testid="login-error-alert" class="p-4 rounded-md bg-red-50 border border-red-200">
           <div class="flex">
             <div class="flex-shrink-0">
               <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -77,7 +77,7 @@ const onSubmit = handleSubmit(async (values) => {
         </div>
 
         <div>
-          <UiButton type="submit" class="w-full" :loading="loading">
+          <UiButton type="submit" :test-id="'login-submit-button'" class="w-full" :loading="loading">
             Sign in
           </UiButton>
         </div>

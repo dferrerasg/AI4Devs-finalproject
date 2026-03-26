@@ -28,14 +28,15 @@ const handleCreateClick = () => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <header class="bg-white shadow">
+    <header data-testid="dashboard-header" class="bg-white shadow">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p class="text-sm text-gray-500">Bienvenido, {{ authStore.user?.fullName }}</p>
+          <p data-testid="dashboard-user-name" class="text-sm text-gray-500">Bienvenido, {{ authStore.user?.fullName }}</p>
         </div>
         <div class="flex items-center gap-4">
           <button 
+            data-testid="dashboard-logout-button"
             @click="logout" 
             class="text-sm text-gray-600 hover:text-gray-900"
           >

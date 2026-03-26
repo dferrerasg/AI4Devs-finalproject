@@ -50,6 +50,7 @@ const displayError = computed(() => props.errorMessage || fieldError.value);
       :placeholder="placeholder"
       :rows="rows || 3"
       :disabled="disabled"
+      :data-testid="name ? `input-${name}` : undefined"
       :class="[
         'px-4 py-2 rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 resize-none',
         displayError
@@ -66,6 +67,7 @@ const displayError = computed(() => props.errorMessage || fieldError.value);
       :type="type || 'text'"
       :placeholder="placeholder"
       :disabled="disabled"
+      :data-testid="name ? `input-${name}` : undefined"
       :class="[
         'px-4 py-2 rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200',
         displayError
@@ -76,7 +78,7 @@ const displayError = computed(() => props.errorMessage || fieldError.value);
       @keyup.enter="$emit('keyup.enter')"
     />
     
-    <span v-if="displayError" class="text-xs text-red-500 mt-0.5">
+    <span v-if="displayError" class="text-xs text-red-500 mt-0.5" :data-testid="name ? `input-error-${name}` : undefined">
       {{ displayError }}
     </span>
   </div>
