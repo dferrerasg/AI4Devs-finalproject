@@ -55,7 +55,7 @@ const displayError = computed(() => props.errorMessage || fieldError.value);
         'px-4 py-2 rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 resize-none',
         displayError
           ? 'border-red-500 text-red-900 placeholder-red-300 focus:ring-red-500' 
-          : 'border-slate-200 text-text placeholder-slate-400',
+          : 'border-secondary/30 text-text placeholder-secondary/60',
         disabled && 'opacity-50 cursor-not-allowed'
       ]"
     />
@@ -72,7 +72,7 @@ const displayError = computed(() => props.errorMessage || fieldError.value);
         'px-4 py-2 rounded-lg border bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200',
         displayError
           ? 'border-red-500 text-red-900 placeholder-red-300 focus:ring-red-500' 
-          : 'border-slate-200 text-text placeholder-slate-400',
+          : 'border-secondary/30 text-text placeholder-secondary/60',
         disabled && 'opacity-50 cursor-not-allowed'
       ]"
       @keyup.enter="$emit('keyup.enter')"

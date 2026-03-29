@@ -1,6 +1,6 @@
 <template>
   <button
-    class="pin-marker absolute z-20 transition-all duration-200 hover:scale-125 focus:outline-none focus:ring-2 focus:ring-offset-1"
+    class="pin-marker absolute z-20 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1"
     :class="pinClasses"
     :style="pinPosition"
     :aria-label="`Pin ${pin.status === 'RESOLVED' ? 'resuelto' : 'abierto'}`"
@@ -33,19 +33,25 @@ import type { Pin } from '~/types/pin';
 
 interface Props {
   pin: Pin;
+  scale?: number;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  scale: 1,
+});
 
 defineEmits<{
   click: [pinId: string];
 }>();
 
-// Posición absoluta en porcentaje
+// Posición absoluta en porcentaje, con contra-escala para tamaño visual constante.
+// transform-origin: 50% 100% ancla la escala en la punta inferior-central del pin,
+// garantizando que la posición sea correcta a cualquier nivel de zoom.
 const pinPosition = computed(() => ({
   left: `${props.pin.xCoord * 100}%`,
   top: `${props.pin.yCoord * 100}%`,
-  transform: 'translate(-50%, -100%)', // Centrar horizontalmente, anclar abajo
+  transform: `translate(-50%, -100%) scale(${1 / props.scale})`,
+  transformOrigin: '50% 100%',
 }));
 
 // Clases dinámicas según estado

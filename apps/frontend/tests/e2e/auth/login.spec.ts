@@ -109,7 +109,7 @@ test.describe('Login flow', () => {
     await page.getByTestId('login-submit-button').click();
 
     await expect(page.getByTestId('input-error-email')).toBeVisible();
-    await expect(page.getByTestId('input-error-email')).toContainText('Invalid email');
+    await expect(page.getByTestId('input-error-email')).toContainText('inválido');
   });
 
   test('shows a password length validation error when password is shorter than 8 characters', async ({ page }) => {

@@ -22,10 +22,10 @@ const props = withDefaults(defineProps<Props>(), {
     :data-testid="testId"
     :class="[
       'relative flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed',
-      variant === 'primary' && 'bg-primary text-white hover:bg-blue-600 focus:ring-primary',
-      variant === 'secondary' && 'bg-secondary text-white hover:bg-slate-600 focus:ring-secondary',
-      variant === 'outline' && 'border-2 border-slate-200 text-text hover:border-primary hover:text-primary bg-transparent',
-      variant === 'ghost' && 'bg-transparent text-secondary hover:text-primary hover:bg-blue-50',
+      variant === 'primary' && 'bg-primary text-accent hover:bg-primary/80 focus:ring-primary',
+      variant === 'secondary' && 'bg-secondary text-primary hover:bg-secondary/80 focus:ring-secondary',
+      variant === 'outline' && 'border-2 border-secondary/30 text-text hover:border-primary hover:text-primary bg-transparent',
+      variant === 'ghost' && 'bg-transparent text-secondary hover:text-primary hover:bg-accent',
     ]"
   >
     <svg 

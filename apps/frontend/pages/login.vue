@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { useAuth } from '~/composables/useAuth';
 
 definePageMeta({
-  layout: false, // <NuxtLayout> is used explicitly in the template below
+  layout: false,
   middleware: ['guest']
 });
 
@@ -13,8 +13,8 @@ const { login, loading, error } = useAuth();
 
 const validationSchema = toTypedSchema(
   z.object({
-    email: z.string().min(1, 'Email is required').email('Invalid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    email: z.string().min(1, 'El correo es obligatorio').email('Correo electrónico inválido'),
+    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
   })
 );
 
@@ -30,16 +30,16 @@ const onSubmit = handleSubmit(async (values) => {
 <template>
   <div>
     <NuxtLayout name="auth">
-      <template #title>Sign in to your account</template>
+      <template #title>Accede a tu cuenta</template>
       <template #subtitle>
-        Or
-        <NuxtLink to="/register" class="font-medium text-primary hover:text-blue-500">
-          create a new account
+        O bien
+        <NuxtLink to="/register" class="font-medium text-primary hover:text-secondary">
+          crea una cuenta nueva
         </NuxtLink>
       </template>
 
       <form data-testid="login-form" class="space-y-6" @submit.prevent="onSubmit">
-        <!-- Global Error Alert -->
+        <!-- Error global -->
         <div v-if="error" data-testid="login-error-alert" class="p-4 rounded-md bg-red-50 border border-red-200">
           <div class="flex">
             <div class="flex-shrink-0">
@@ -55,22 +55,22 @@ const onSubmit = handleSubmit(async (values) => {
 
         <UiInput
           name="email"
-          label="Email address"
+          label="Correo electrónico"
           type="email"
-          placeholder="you@example.com"
+          placeholder="tu@email.com"
         />
 
         <div class="space-y-1">
           <UiInput
             name="password"
-            label="Password"
+            label="Contraseña"
             type="password"
             placeholder="••••••••"
           />
           <div class="flex items-center justify-end">
             <div class="text-sm">
-              <a href="#" class="font-medium text-primary hover:text-blue-500">
-                Forgot your password?
+              <a href="#" class="font-medium text-primary hover:text-secondary">
+                ¿Olvidaste tu contraseña?
               </a>
             </div>
           </div>
@@ -78,7 +78,7 @@ const onSubmit = handleSubmit(async (values) => {
 
         <div>
           <UiButton type="submit" :test-id="'login-submit-button'" class="w-full" :loading="loading">
-            Sign in
+            Iniciar sesión
           </UiButton>
         </div>
       </form>

@@ -15,7 +15,7 @@ export function usePlanNavigation() {
   const lastPointerPosition = ref<Position | null>(null)
 
   // Configuration
-  const MIN_SCALE = 0.5
+  const minScale = ref(0.5)
   const MAX_SCALE = 10
   const ZOOM_SENSITIVITY = 0.1
 
@@ -27,7 +27,7 @@ export function usePlanNavigation() {
   }))
 
   const setScale = (newScale: number) => {
-    scale.value = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE)
+    scale.value = Math.min(Math.max(newScale, minScale.value), MAX_SCALE)
   }
 
   /**
@@ -43,7 +43,7 @@ export function usePlanNavigation() {
     const distinctNewScale = scale.value * factor
     
     // Clamp the scale
-    const newScale = Math.min(Math.max(distinctNewScale, MIN_SCALE), MAX_SCALE)
+    const newScale = Math.min(Math.max(distinctNewScale, minScale.value), MAX_SCALE)
     
     // Calculate the actual ratio applied (because of clamping)
     const scaleRatio = newScale / scale.value
@@ -123,6 +123,7 @@ export function usePlanNavigation() {
     scale,
     position,
     isDragging,
+    minScale,
     transformStyle,
     zoomToPoint,
     startDrag,

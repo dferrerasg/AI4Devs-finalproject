@@ -2,8 +2,10 @@
   <div class="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-100"> 
     <!-- Sidebar (ocultar botón de agregar en modo guest) -->
     <LayerSidebar 
-      :layers="currentPlan?.layers || []" 
+      :layers="currentPlan?.layers || []"
+      :visibility-map="visibilityMap"
       @add-layer="!isGuestMode && (showUploadModal = true)"
+      @toggle-visibility="toggleVisibility"
     />
 
     <!-- Main Stage Area -->
@@ -18,7 +20,7 @@
           <!-- Toggle modo de creación de pines -->
           <button
             v-if="hasLayers"
-            class="mr-4 px-3 py-1.5 text-xs font-medium rounded transition-colors"
+            class="mr-2 px-3 py-1.5 text-xs font-medium rounded transition-colors"
             :class="{
               'bg-primary text-white': isPinMode,
               'bg-gray-100 text-gray-700 hover:bg-gray-200': !isPinMode,
@@ -27,6 +29,29 @@
           >
             {{ isPinMode ? '✓ Modo Pin' : '+ Añadir Pin' }}
           </button>
+
+          <!-- Toggle comparador de versiones -->
+          <div
+            v-if="hasLayers"
+            class="relative mr-4"
+            :title="!comparatorAvailable ? 'Se necesitan al menos 2 versiones del plano para comparar' : (comparatorActive ? 'Desactivar comparador' : 'Activar comparador de versiones')"
+          >
+            <button
+              class="px-3 py-1.5 text-xs font-medium rounded transition-colors flex items-center gap-1.5"
+              :class="{
+                'bg-primary text-white': comparatorActive,
+                'bg-gray-100 text-gray-700 hover:bg-gray-200': !comparatorActive && comparatorAvailable,
+                'bg-gray-50 text-gray-300 cursor-not-allowed': !comparatorAvailable,
+              }"
+              :disabled="!comparatorAvailable"
+              @click="toggleComparator"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 3M21 7.5H7.5" />
+              </svg>
+              Comparar
+            </button>
+          </div>
 
           <div class="text-xs text-gray-500 font-mono">
              Zoom: {{ Math.round(scale * 100) }}%
@@ -67,7 +92,7 @@
              <div class="relative" :style="containerDimensions">
 
                 <!-- Modo Comparador: imagen base fija + imagen propuesta con opacidad dinámica -->
-                <template v-if="comparatorEnabled">
+                <template v-if="comparatorAvailable && comparatorActive">
                   <img
                     v-if="baseImageUrl"
                     :src="baseImageUrl"
@@ -89,8 +114,9 @@
                   <template v-for="layer in currentPlan?.layers?.filter((l: any) => l.status === 'READY')" :key="layer.id">
                     <img
                       :src="getImageUrl(layer.imageUrl)"
-                      class="max-w-none pointer-events-none absolute top-0 left-0"
+                      class="max-w-none pointer-events-none absolute top-0 left-0 transition-opacity duration-200"
                       draggable="false"
+                      :style="{ opacity: isVisible(layer.id) ? 1 : 0 }"
                       @load="onImageLoad"
                     />
                   </template>
@@ -101,20 +127,11 @@
                   v-for="pin in visiblePins"
                   :key="pin.id"
                   :pin="pin"
+                  :scale="scale"
                   @click="handlePinClick"
                 />
              </div>
           </div>
-
-          <!-- Pin List & Navigation -->
-          <PinList
-            v-if="visiblePins.length > 0"
-            :pins="visiblePins"
-            :selected-pin="selectedPin"
-            :loading="pinsLoading"
-            @select="handlePinClick"
-            @toggle-list="showPinList = !showPinList"
-          />
 
           <!-- Controls Overlay -->
           <div class="absolute bottom-6 right-6 z-10 transition-opacity duration-300 hover:opacity-100 opacity-90">
@@ -136,7 +153,7 @@
             @pointerup.stop
           >
             <LayerComparatorControls
-              v-if="comparatorEnabled"
+              v-if="comparatorAvailable && comparatorActive"
               v-model:opacity="opacity"
               v-model:base-plan-id="basePlanId"
               v-model:proposal-plan-id="proposalPlanId"
@@ -239,6 +256,7 @@ const {
   position,
   transformStyle, 
   isDragging,
+  minScale,
   zoomToPoint, 
   startDrag, 
   onDrag, 
@@ -246,6 +264,21 @@ const {
   reset,
   fitToScreen
 } = usePlanNavigation()
+
+// --- Visibilidad de Capas ---
+const planIdRef = computed(() => currentPlan.value?.id)
+const { visibilityMap, isVisible, toggleVisibility } = useLayerVisibility(planIdRef)
+
+// --- Comparador: disponibilidad y estado de activación ---
+/** true cuando el plan tiene >= 2 versiones comparables */
+const comparatorAvailable = computed(() => comparatorEnabled.value)
+/** true cuando el usuario ha activado explícitamente el comparador */
+const comparatorActive = ref(false)
+
+const toggleComparator = () => {
+  if (!comparatorAvailable.value) return
+  comparatorActive.value = !comparatorActive.value
+}
 
 const onWheel = (e: WheelEvent) => {
   if (!containerRef.value || isPinMode.value) return
@@ -455,10 +488,12 @@ const handleFit = () => {
     
     // Fit only if we have dimensions
     if (img.naturalWidth && img.naturalHeight) {
-       // Call composable logic
-       scale.value = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight) * 0.9
-       position.value.x = (rect.width - img.naturalWidth * scale.value) / 2
-       position.value.y = (rect.height - img.naturalHeight * scale.value) / 2
+       const fitScale = Math.min(rect.width / img.naturalWidth, rect.height / img.naturalHeight) * 0.9
+       // Update minimum zoom to match the fit scale so the user can't zoom out further
+       minScale.value = fitScale
+       scale.value = fitScale
+       position.value.x = (rect.width - img.naturalWidth * fitScale) / 2
+       position.value.y = (rect.height - img.naturalHeight * fitScale) / 2
     }
 }
 
@@ -532,6 +567,9 @@ watch(currentVisibleLayer, async (newLayer, oldLayer) => {
 
 // Re-inicializar comparador cuando cambia el plan activo (ej: navegar entre versiones)
 watch(currentPlan, (newPlan) => {
-  if (newPlan) initComparator(newPlan)
+  if (newPlan) {
+    initComparator(newPlan)
+    comparatorActive.value = false
+  }
 }, { immediate: false })
 </script>

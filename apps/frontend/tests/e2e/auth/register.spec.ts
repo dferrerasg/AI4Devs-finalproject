@@ -83,7 +83,7 @@ test.describe('Register flow', () => {
     await page.getByTestId('register-submit-button').click();
 
     await expect(page.getByTestId('input-error-email')).toBeVisible();
-    await expect(page.getByTestId('input-error-email')).toContainText('Invalid email');
+    await expect(page.getByTestId('input-error-email')).toContainText('inválido');
   });
 
   test('shows a password length validation error when password is shorter than 8 characters', async ({ page }) => {
@@ -111,7 +111,7 @@ test.describe('Register flow', () => {
     await page.getByTestId('register-submit-button').click();
 
     await expect(page.getByTestId('input-error-confirmPassword')).toBeVisible();
-    await expect(page.getByTestId('input-error-confirmPassword')).toContainText('match');
+    await expect(page.getByTestId('input-error-confirmPassword')).toContainText('no coinciden');
   });
 
   // ---------------------------------------------------------------------------

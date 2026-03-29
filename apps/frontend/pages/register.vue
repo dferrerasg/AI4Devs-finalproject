@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { useAuth } from '~/composables/useAuth';
 
 definePageMeta({
-  layout: false, // <NuxtLayout> is used explicitly in the template below
+  layout: false,
   middleware: ['guest']
 });
 
@@ -13,13 +13,13 @@ const { register, loading, error } = useAuth();
 
 const validationSchema = toTypedSchema(
   z.object({
-    fullName: z.string().min(2, 'Name is required'),
-    email: z.string().min(1, 'Email is required').email('Invalid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    fullName: z.string().min(2, 'El nombre es obligatorio'),
+    email: z.string().min(1, 'El correo es obligatorio').email('Correo electrónico inválido'),
+    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
     confirmPassword: z.string()
   }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword'],
   })
 );
 
@@ -40,16 +40,16 @@ const onSubmit = handleSubmit(async (values) => {
 <template>
   <div>
     <NuxtLayout name="auth">
-      <template #title>Create your account</template>
+      <template #title>Crea tu cuenta</template>
       <template #subtitle>
-        Already have an account?
-        <NuxtLink to="/login" class="font-medium text-primary hover:text-blue-500">
-          Sign in
+        ¿Ya tienes cuenta?
+        <NuxtLink to="/login" class="font-medium text-primary hover:text-secondary">
+          Inicia sesión
         </NuxtLink>
       </template>
 
       <form data-testid="register-form" class="space-y-6" @submit.prevent="onSubmit">
-        <!-- Global Error Alert -->
+        <!-- Error global -->
         <div v-if="error" data-testid="register-error-alert" class="p-4 rounded-md bg-red-50 border border-red-200">
           <div class="flex">
             <div class="flex-shrink-0">
@@ -65,35 +65,35 @@ const onSubmit = handleSubmit(async (values) => {
 
         <UiInput
           name="fullName"
-          label="Full Name"
+          label="Nombre completo"
           type="text"
-          placeholder="Ark. Wright"
+          placeholder="Arq. García"
         />
 
         <UiInput
           name="email"
-          label="Email address"
+          label="Correo electrónico"
           type="email"
-          placeholder="you@example.com"
+          placeholder="tu@email.com"
         />
 
         <UiInput
           name="password"
-          label="Password"
+          label="Contraseña"
           type="password"
           placeholder="••••••••"
         />
 
         <UiInput
           name="confirmPassword"
-          label="Confirm Password"
+          label="Confirmar contraseña"
           type="password"
           placeholder="••••••••"
         />
 
         <div>
           <UiButton type="submit" :test-id="'register-submit-button'" class="w-full" :loading="loading">
-            Create account
+            Crear cuenta
           </UiButton>
         </div>
       </form>

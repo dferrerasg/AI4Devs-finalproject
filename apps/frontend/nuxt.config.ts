@@ -2,6 +2,16 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@pinia/nuxt'],
+  app: {
+    head: {
+      htmlAttrs: { lang: 'es' },
+      titleTemplate: '%s | TRACÉ',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      ],
+    },
+  },
   components: [
     {
       path: '~/components/common',

@@ -6,7 +6,7 @@ import type { Project } from '~/types/project'
 describe('ProjectCard.vue', () => {
   const statusBadgeSelector = '.rounded-full'
   const activeStatusClass = 'bg-green-100'
-  const archivedStatusClass = 'bg-gray-100'
+  const archivedStatusClass = 'bg-secondary/20'
   const defaultDescriptionText = 'Sin descripción'
 
   const mockProject: Project = {

@@ -4,11 +4,11 @@
 
 @layer base {
   :root {
-    /* Corporate Colors - values to be defined by brand guidelines */
-    --color-primary: #3b82f6;
-    --color-secondary: #64748b;
-    --color-accent: #f59e0b;
-    --color-background: #ffffff;
-    --color-text: #0f172a;
+    /* Corporate Colors — TRACÉ Brand Palette */
+    --color-primary: #1C1C1C;    /* Negro Tinta */
+    --color-secondary: #bcc9ca;  /* Gris Cemento */
+    --color-accent: #F2E8C9;     /* Amarillo Ocre */
+    --color-background: #F2E8C9; /* Fondo claro de marca */
+    --color-text: #1C1C1C;       /* Texto principal */
   }
 }

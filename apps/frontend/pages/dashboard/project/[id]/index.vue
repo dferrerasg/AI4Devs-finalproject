@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="p-4 sm:p-6 lg:p-8">
     <!-- Header con botón compartir -->
     <div class="flex justify-between items-center mb-6">
       <div>
