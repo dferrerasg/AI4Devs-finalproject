@@ -1,10 +1,10 @@
 <template>
   <header class="bg-primary border-b border-secondary/20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo y Nombre del Proyecto -->
         <div class="flex items-center space-x-4">
-          <span class="text-xl font-bold tracking-widest text-accent">TRACÉ</span>
+          <span class="text-2xl font-bold tracking-widest text-accent">TRACÉ</span>
           <div class="flex items-center space-x-2">
             <h1 class="text-lg font-semibold text-accent">{{ projectName }}</h1>
             <span class="inline-flex items-center rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-medium text-accent">
