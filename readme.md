@@ -22,11 +22,11 @@ Plataforma SaaS de colaboración visual para arquitectura e interiorismo. Centra
 
 ### **0.4. URL del proyecto:**
 
-> Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
+http://54.246.208.126/
 
 ### 0.5. URL o archivo comprimido del repositorio
 
-> Puedes tenerlo alojado en público o en privado, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/). También puedes compartir por correo un archivo zip con el contenido
+https://github.com/dferrerasg/AI4Devs-finalproject
 
 
 ---
@@ -52,10 +52,287 @@ Establecer una **"Fuente Única de Verdad"** para el proyecto de obra. Su propó
 
 ### **1.3. Diseño y experiencia de usuario:**
 
-> Proporciona imágenes y/o videotutorial mostrando la experiencia del usuario desde que aterriza en la aplicación, pasando por todas las funcionalidades principales.
+A continuación se muestra el flujo principal de la aplicación, desde la creación de un proyecto hasta la colaboración con el cliente mediante pines y comentarios.
+
+**1. Crear un proyecto**
+![Crear proyecto](docs/images/01-create-project.png)
+
+**2. Dashboard del proyecto**
+![Dashboard del proyecto](docs/images/02-project-dashboard.png)
+
+**3. Compartir proyecto con el cliente**
+![Compartir proyecto](docs/images/03-share-project.png)
+
+**4. Subir un plano**
+![Subida de plano](docs/images/04-plan-upload.png)
+
+**5. Visor de capas**
+![Visor de capas](docs/images/05-layer-view.png)
+
+**6. Comparador de versiones**
+![Comparador de versiones](docs/images/06-compare-versions.png)
+
+**7. Vista del cliente (invitado)**
+![Vista de invitado](docs/images/07-guest-view.png)
+
+**8. Añadir comentarios sobre el plano**
+![Añadir comentarios](docs/images/08-add-comments.png)
 
 ### **1.4. Instrucciones de instalación:**
-> Documenta de manera precisa las instrucciones para instalar y poner en marcha el proyecto en local (librerías, backend, frontend, servidor, base de datos, migraciones y semillas de datos, etc.)
+
+#### Prerrequisitos
+
+Asegúrate de tener instaladas las siguientes herramientas antes de comenzar:
+
+| Herramienta | Versión mínima | Uso |
+|---|---|---|
+| [Node.js](https://nodejs.org/) | v20.x (LTS) | Ejecución de backend, worker y frontend |
+| [npm](https://www.npmjs.com/) | v10.x | Gestión de paquetes (workspaces) |
+| [Docker](https://www.docker.com/) & Docker Compose | v24.x | Infraestructura local (PostgreSQL + Redis) |
+| [Ghostscript](https://ghostscript.com/) | cualquiera | Procesamiento de PDFs por el Worker (`brew install ghostscript` en macOS / `apt install ghostscript` en Ubuntu) |
+| [Git](https://git-scm.com/) | — | Control de versiones |
+
+---
+
+#### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/dferrerasg/AI4Devs-finalproject.git
+cd AI4Devs-finalproject
+```
+
+---
+
+#### 2. Configurar variables de entorno
+
+Crea los ficheros `.env` necesarios para cada aplicación. A continuación se muestra la configuración mínima para desarrollo local.
+
+**`apps/backend/.env`**
+
+```env
+# Servidor
+PORT=4000
+BASE_URL=http://localhost:4000
+NODE_ENV=development
+
+# Base de datos (debe coincidir con el .env raíz)
+DATABASE_URL=postgresql://trace_user:trace_password@localhost:5432/trace_db
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# Autenticación
+JWT_SECRET=un_secreto_muy_seguro_de_al_menos_32_chars
+
+# CORS
+CORS_ORIGIN=http://localhost:3000
+```
+
+**`apps/worker/.env`**
+
+```env
+NODE_ENV=development
+
+# Base de datos (debe coincidir con el .env raíz)
+DATABASE_URL=postgresql://trace_user:trace_password@localhost:5432/trace_db
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# Almacenamiento S3 / AWS
+S3_ENDPOINT=https://s3.amazonaws.com
+S3_ACCESS_KEY=tu_access_key_id
+S3_SECRET_KEY=tu_secret_access_key
+S3_BUCKET_NAME=trace-plans-dev
+S3_REGION=eu-west-1
+
+# Concurrencia de procesamiento
+CONCURRENCY=5
+```
+
+**`apps/frontend/.env`** (o `apps/frontend/.env.development`)
+
+```env
+NUXT_PUBLIC_API_BASE=http://localhost:4000/api
+NUXT_PUBLIC_SOCKET_URL=http://localhost:4000
+```
+
+**`docker-compose.yml`** — Variables de la infraestructura (crea un `.env` en la raíz):
+
+```env
+POSTGRES_USER=trace_user
+POSTGRES_PASSWORD=trace_password
+POSTGRES_DB=trace_db
+REDIS_PORT=6379
+```
+
+---
+
+#### 3. Levantar la infraestructura con Docker
+
+Arranca PostgreSQL y Redis en segundo plano:
+
+```bash
+# Desde la raíz del proyecto
+docker compose up -d
+```
+
+Verifica que los contenedores estén corriendo:
+
+```bash
+docker compose ps
+```
+
+Para detener la infraestructura:
+
+```bash
+docker compose down
+```
+
+Para detener y eliminar los volúmenes (⚠️ borra todos los datos):
+
+```bash
+docker compose down -v
+```
+
+---
+
+#### 4. Prisma — Generación de cliente y migraciones
+
+Los siguientes comandos deben ejecutarse **desde `apps/backend/`**:
+
+```bash
+cd apps/backend
+```
+
+**Generar el cliente de Prisma** (necesario tras cualquier cambio en `schema.prisma`):
+
+```bash
+npm run prisma:generate
+# Equivale a: prisma generate
+```
+
+**Aplicar migraciones en desarrollo** (crea la base de datos y aplica todas las migraciones pendientes):
+
+```bash
+npm run prisma:migrate
+# Equivale a: prisma migrate dev
+```
+
+**Aplicar migraciones en producción** (sin prompts interactivos):
+
+```bash
+npx prisma migrate deploy
+```
+
+**Explorar la base de datos con Prisma Studio** (interfaz web en `http://localhost:5555`):
+
+```bash
+npx prisma studio
+```
+
+> El Worker consume el mismo schema de Prisma que el backend. Para regenerar el cliente desde el worker:
+> ```bash
+> cd apps/worker
+> npm run prisma:generate
+> # Equivale a: prisma generate --schema=../backend/prisma/schema.prisma
+> ```
+
+---
+
+#### 5. Backend (API Express)
+
+Directorio: `apps/backend/`
+
+| Script | Comando | Descripción |
+|---|---|---|
+| Desarrollo (hot-reload) | `npm run dev` | Inicia el servidor con `nodemon` en el puerto `4000` |
+| Compilar TypeScript | `npm run build` | Transpila a `dist/` con `tsc` + `tsc-alias` |
+| Producción | `npm run start` | Ejecuta `dist/server.js` |
+| Tests | `npm run test` | Lanza la suite de tests con Jest |
+| Tests (watch) | `npm run test:watch` | Modo watch para TDD |
+| Cobertura | `npm run test:cov` | Genera reporte de cobertura en `coverage/` |
+| Lint | `npm run lint` | Análisis estático con ESLint |
+
+```bash
+cd apps/backend
+npm run dev
+```
+
+El servidor estará disponible en `http://localhost:4000`.
+
+---
+
+#### 6. Worker (Procesador de imágenes)
+
+Directorio: `apps/worker/`
+
+| Script | Comando | Descripción |
+|---|---|---|
+| Desarrollo (hot-reload) | `npm run dev` | Inicia el worker con `nodemon` |
+| Compilar TypeScript | `npm run build` | Transpila a `dist/` con `tsc` + `tsc-alias` |
+| Producción | `npm run start` | Ejecuta `dist/index.js` |
+| Tests | `npm run test` | Lanza la suite de tests con Jest |
+| Tests (watch) | `npm run test:watch` | Modo watch para TDD |
+| Cobertura | `npm run test:cov` | Genera reporte de cobertura en `coverage/` |
+
+```bash
+cd apps/worker
+npm run dev
+```
+
+> El worker escucha la cola `plan-processing` de Redis. Es un proceso "headless" — no expone ningún puerto HTTP.
+
+---
+
+#### 7. Frontend (Nuxt 3)
+
+Directorio: `apps/frontend/`
+
+| Script | Comando | Descripción |
+|---|---|---|
+| Desarrollo (HMR) | `npm run dev` | Inicia el servidor de desarrollo en el puerto `3000` |
+| Compilar | `npm run build` | Genera el bundle de producción en `.output/` |
+| Generar estático | `npm run generate` | Pre-renderiza la app como HTML estático |
+| Preview de producción | `npm run preview` | Sirve localmente el build de producción |
+| Tests unitarios | `npm run test:unit` | Lanza Vitest |
+| Tests E2E | `npm run test:e2e` | Lanza Playwright |
+| Tests E2E (UI) | `npm run test:e2e:ui` | Playwright con interfaz visual |
+
+```bash
+cd apps/frontend
+npm run dev
+```
+
+La aplicación estará disponible en `http://localhost:3000`.
+
+---
+
+#### 8. Arranque completo en local
+
+Para tener el entorno completamente operativo, abre **tres terminales** de forma simultánea:
+
+```bash
+# Terminal 1 — Infraestructura
+docker compose up -d
+
+# Terminal 2 — Backend API (desde apps/backend/)
+npm run dev
+
+# Terminal 3 — Worker (desde apps/worker/)
+npm run dev
+
+# Terminal 4 — Frontend (desde apps/frontend/)
+npm run dev
+```
+
+Una vez todo esté en marcha:
+
+- **Frontend:** `http://localhost:3000`
+- **Backend API:** `http://localhost:4000`
+- **Prisma Studio:** `http://localhost:5555` (ejecutar `npx prisma studio` desde `apps/backend/`)
 
 ---
 
@@ -186,11 +463,65 @@ graph TB
 
 ### **2.5. Seguridad**
 
-> Enumera y describe las prácticas de seguridad principales que se han implementado en el proyecto, añadiendo ejemplos si procede
+#### 1. Hashing de contraseñas con bcrypt
+
+Las contraseñas nunca se almacenan en texto plano. Se utiliza `bcrypt` con un factor de coste de **10 rondas de sal** antes de persistir en base de datos.
+
+#### 2. Autenticación JWT (Bearer Token)
+
+Todos los endpoints protegidos exigen un token JWT en la cabecera `Authorization: Bearer <token>`. El middleware `authMiddleware` valida la firma, el formato `Bearer` y devuelve `401` ante cualquier anomalía.
+
+#### 3. Tokens de invitado con permisos acotados
+
+Los accesos de clientes externos se gestionan mediante **tokens JWT de ámbito reducido** que solo contienen `projectId` y un array `permissions` (`['view', 'comment']`). Nunca incluyen `userId`, por lo que no pueden suplantar a usuarios registrados.
+
+#### 4. Autenticación en WebSocket (Socket.io)
+
+Las conexiones WebSocket también están protegidas. El middleware de Socket.io verifica el JWT incluido en el handshake antes de permitir la conexión, aislando al usuario en una sala propia (`user:<id>`).
+
+#### 5. Cabeceras HTTP seguras con Helmet
+
+Se aplica `helmet` globalmente para añadir cabeceras de seguridad HTTP estándar (CSP, X-Frame-Options, HSTS, etc.) y se habilita la política `cross-origin` para los recursos estáticos de planos.
+
+#### 6. CORS configurado por entorno
+
+El origen permitido en CORS se inyecta desde la variable de entorno `CORS_ORIGIN`, evitando comodines `*` en producción.
+
+#### 7. Validación estricta de entrada con Zod
+
+Todos los DTOs de entrada (registro, login, creación de proyectos, pines…) se validan con esquemas **Zod** antes de llegar a la lógica de negocio. Cualquier payload inválido retorna `400 Bad Request` con el detalle del error, sin exponer detalles internos.
+
+#### 8. Autorización basada en roles (RBAC)
+
+El sistema distingue tres niveles de acceso: `ADMIN`, `CLIENT` y `GUEST`. A nivel de proyecto, los roles `OWNER`, `EDITOR` y `VIEWER` controlan las operaciones permitidas (solo el `OWNER` puede eliminar un proyecto o revocar miembros). Las validaciones se realizan en la capa de use-case antes de cualquier operación sobre la base de datos.
+
+#### 9. Protección de rutas en el frontend
+
+El middleware `auth.ts` de Nuxt redirige a `/login` si no existe sesión activa. El middleware `guest.ts` impide que usuarios ya autenticados accedan a las páginas públicas de login/registro, evitando estados inconsistentes.
 
 ### **2.6. Tests**
 
-> Describe brevemente algunos de los tests realizados
+El proyecto cubre tres niveles de testing distribuidos entre backend y frontend.
+
+#### Backend — Tests de integración (Jest + Supertest)
+
+**Objetivo:** Verificar el contrato HTTP de cada endpoint de la API (códigos de respuesta, estructura del payload y reglas de negocio) sin dependencia de infraestructura real. La app Express se levanta completa pero con Prisma mockeado, lo que garantiza tests deterministas y rápidos.
+
+**Alcance:** Se cubre el ciclo de vida completo de las entidades principales — autenticación (registro, login, JWT), proyectos (CRUD y límites por plan de suscripción), planos y capas (subida asíncrona y versionado por `sheetName`), pines y comentarios (creación, validación de coordenadas y contenido, resolución, eliminación) e invitaciones (generación, listado, revocación y canje de token de invitado). Para cada recurso se comprueban tanto los caminos felices como los de error: validaciones de entrada, control de acceso por rol (`OWNER`, `EDITOR`, `VIEWER`, `GUEST`) y respuestas `401`/`403`/`404` ante accesos no autorizados o recursos inexistentes.
+
+#### Frontend — Tests unitarios (Vitest + Vue Test Utils)
+
+**Objetivo:** Validar la lógica de estado y las reglas de presentación de forma aislada, sin renderizar páginas completas ni realizar llamadas HTTP reales.
+
+**Alcance — Stores (Pinia):** Se prueba que los stores de autenticación (`auth`, `guest`) gestionan correctamente el ciclo de sesión (login, logout, persistencia de token, recuperación del usuario actual y manejo de errores `401`). El store de proyectos verifica la aplicación de los límites de plan (FREE vs PRO) y los estados de carga y error. El store de toast cubre la creación y eliminación automática de notificaciones.
+
+**Alcance — Composables:** Se prueba la lógica de dominio del visor de forma unitaria: `useLayerComparator` garantiza la selección correcta de `basePlanId`/`proposalPlanId` entre versiones de plano y la resolución de URLs de imagen; `usePlanNavigation` cubre el comportamiento del zoom, arrastre y ajuste a pantalla; `useRealtimeLayers` verifica el registro y limpieza de listeners WebSocket; `usePins` valida el ciclo de vida de los pines y el cálculo de permisos de resolución.
+
+#### Frontend — Tests E2E (Playwright)
+
+**Objetivo:** Ejercitar los flujos críticos de usuario de extremo a extremo en un navegador real, incluyendo navegación, interacción con formularios y comportamiento de redirección.
+
+**Alcance:** Se cubren los flujos de autenticación completos — login y registro — verificando tanto el camino de éxito (redirección al dashboard, persistencia de la cookie `auth_token`) como todos los casos de error (credenciales incorrectas, email ya registrado, validaciones de formato y longitud). Adicionalmente se comprueba que las rutas protegidas redirigen correctamente a usuarios no autenticados y que las rutas públicas redirigen a usuarios ya autenticados.
 
 ---
 
